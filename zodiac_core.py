@@ -349,6 +349,7 @@ def add_stars(event, canvas, all_stars, settings):
     mirror_vertically = settings.mirror_mode['vertical'].get()
     mirror_slash = settings.mirror_mode['slash'].get()
     mirror_backslash = settings.mirror_mode['backslash'].get()
+    mirror_center = settings.mirror_mode['center'].get()
     if settings.blockOneClick:
         settings.blockOneClick = False
         return
@@ -373,6 +374,11 @@ def add_stars(event, canvas, all_stars, settings):
         for star_to_add in stars_to_add:
             new_stars_to_add.append(
                 get_mirror_backslashed_coordinates(star_to_add, canvas.winfo_width(), canvas.winfo_height()))
+        stars_to_add.extend(new_stars_to_add)
+    if mirror_center:
+        new_stars_to_add = []
+        for star_to_add in stars_to_add:
+            new_stars_to_add.append((canvas.winfo_width() - star_to_add[0], canvas.winfo_height() - star_to_add[1]))
         stars_to_add.extend(new_stars_to_add)
     valid_stars = []
     for star_to_add in stars_to_add:
@@ -610,8 +616,9 @@ def main(argv):
     mirror_vertically = BooleanVar()
     mirror_slash = BooleanVar()
     mirror_backslash = BooleanVar()
+    mirror_center = BooleanVar()
     mirror_mode = {'horizontal': mirror_horizontally, 'vertical': mirror_vertically,
-                   'slash': mirror_slash, 'backslash': mirror_backslash}
+                   'slash': mirror_slash, 'backslash': mirror_backslash, 'center': mirror_center}
     settings = Settings(STAR_TYPES[NORMAL_STAR], GALAXIES[GALAXY_HUGE], SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A],
                         galaxy_radio, parsec_indicator_toggles, mirror_mode)
 
@@ -682,6 +689,10 @@ def main(argv):
     Checkbutton(button_window, text='Mirror \\', indicatoron=False, variable=mirror_backslash,
                 activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
         .grid(row=13, column=1, sticky=W, padx=5, pady=5)
+
+    Checkbutton(button_window, text='Mirror at center point', indicatoron=False, variable=mirror_center,
+                activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
+        .grid(row=12, column=2, sticky=W, padx=5, pady=5)
 
     Label(button_window, text='RANGE INDICATORS', relief=GROOVE) \
         .grid(row=14, column=2, sticky=W, padx=5, pady=5)
