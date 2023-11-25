@@ -1,0 +1,7 @@
+Changelog for Zodiac
+
+Version 1.1 Changes:
+- 'Large / Cluster' Galaxies are now separated into Large and Cluster. Cluster is the same size as large but allows for
+  71 star systems instead of 54.
+Version 1.1 Backwards Compatibility: Previous Large/Cluster Galaxies were actually large galaxies, they are now
+                                     automatically converted to cluster galaxies when you load them.

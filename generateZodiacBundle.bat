@@ -9,6 +9,7 @@ robocopy C:\Users\roman\PycharmProjects\moo2_zodiac\ C:\Users\roman\PycharmProje
 robocopy C:\Users\roman\PycharmProjects\moo2_zodiac\ C:\Users\roman\PycharmProjects\moo2_zodiac\zodiac_vX\zodiac\ ZODIAC_TEMPLATE.LUA
 robocopy C:\Users\roman\PycharmProjects\moo2_zodiac\ C:\Users\roman\PycharmProjects\moo2_zodiac\zodiac_vX\zodiac\ LICENSE.txt
 robocopy C:\Users\roman\PycharmProjects\moo2_zodiac\ C:\Users\roman\PycharmProjects\moo2_zodiac\zodiac_vX\zodiac\ README.txt
+robocopy C:\Users\roman\PycharmProjects\moo2_zodiac\ C:\Users\roman\PycharmProjects\moo2_zodiac\zodiac_vX\zodiac\ CHANGELOG.txt
 cd zodiac_vX
 cd zodiac
 del  zodiac.exe

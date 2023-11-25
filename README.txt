@@ -1,12 +1,12 @@
-Zodiac Version 1.0
+Zodiac Version 1.1
 
 What is it?
 A tool to manually 'draw' galaxies that can then be used in Master of Orion 2 games
 
 How to use it:
-1. Ensure your Master Of Orion 2 is using Version 1.50 (downloadable at https://moo2mod.com/)
+1. Ensure your Master Of Orion 2 is using Version 1.50 (patch can be found at https://moo2mod.com/)
 2. Copy this folder (zodiac) into the mod-folder of 150, e.g. C:\DOSBox-0.74\Orion2\150\mods\
-3. In the copied folder, run zodiac.exe
+3. In the copied folder, run zodiac.exe (or zodiac_core.py if you are using Python)
 4. Draw a galaxy
     - First, choose a galaxy size (if you change it later on it will delete everything you have drawn!)
     - Place star systems with a left click
@@ -27,13 +27,15 @@ as long as these mods have a mod order greater than 150 (which is the case for t
 Zodiac is compatible with map mods because it will not interfere with the chances of star systems having specific
 colors, planets, monsters or specials.
 An exception to this are the chances for additional black holes and wormholes, these will be set to zero.
+Also, the amount of stars allowed per galaxy is currently hard-coded.
 
 Using ENABLE.CFG directly:
 To enable a Zodiac galaxy directly in the ENABLE.CFG of 150 you need to provide the save slot number from 0 to 9, e.g.
 enable ZODIAC6;
 
-Running Zodiac with Python:
-zodiac_core.py contains the same code as zodiac.exe, it is known to work with Python 3.8
+Resources:
+- Executable version for Windows is available at https://moo2mod.com/
+- Source-code is available at https://github.com/Epirasque/moo2zodiac and it is known to run with Python 3.8
 
 Contact:
 Join the MOO2 discord server (https://discord.gg/45BnvY4) and contact Epirasque, or write an email to romanhable@web.de
