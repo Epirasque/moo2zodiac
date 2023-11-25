@@ -12,7 +12,8 @@ VERSION = "v1.1"
 # ...
 
 # GUI
-STAR_RECT_RADIUS = 8
+STAR_DRAWING_RADIUS = 8
+MINIMAL_STAR_SEPARATION_DISTANCE = 10
 WORMHOLE_SOURCE_CIRCLE_RADIUS = 10
 SCALE_FACTOR = .7
 GALAXY_COLOR = '#161616'
@@ -309,10 +310,10 @@ def leftclick_star(canvas, star, settings, all_stars):
 
 def add_single_star(x, y, canvas, all_stars, settings):
     starType = settings.starType
-    polygon_points = [x - STAR_RECT_RADIUS, y,
-                      x, y - STAR_RECT_RADIUS,
-                      x + STAR_RECT_RADIUS, y,
-                      x, y + STAR_RECT_RADIUS]
+    polygon_points = [x - STAR_DRAWING_RADIUS, y,
+                      x, y - STAR_DRAWING_RADIUS,
+                      x + STAR_DRAWING_RADIUS, y,
+                      x, y + STAR_DRAWING_RADIUS]
     drawn_star = canvas.create_polygon(polygon_points, fill=starType.draw_color, outline=STAR_OUTLINE_COLOR)
     # drawn_star = canvas.create_rectangle((event.x - STAR_RECT_RADIUS, event.y - STAR_RECT_RADIUS),
     #                                     (event.x + STAR_RECT_RADIUS, event.y + STAR_RECT_RADIUS),
@@ -377,11 +378,24 @@ def add_stars(event, canvas, all_stars, settings):
     for star_to_add in stars_to_add:
         if star_to_add[0] >= 0 and star_to_add[0] <= canvas.winfo_width() \
                 and star_to_add[1] >= 0 and star_to_add[1] <= canvas.winfo_height():
-            valid_stars.append(star_to_add)
-        else:
-            print(f'Refusing to place star at x={star_to_add[0]}, y={star_to_add[1]}, out of bounds after mirroring')
+            still_valid = True
+            for star in all_stars:
+                if math.dist([star.canvas_x, star.canvas_y], [star_to_add[0], star_to_add[1]]) < MINIMAL_STAR_SEPARATION_DISTANCE:
+                    still_valid = False
+                    break
+            for new_star in valid_stars:
+                if math.dist([new_star[0], new_star[1]], [star_to_add[0], star_to_add[1]]) < MINIMAL_STAR_SEPARATION_DISTANCE:
+                    still_valid = False
+                    break
+            if still_valid == True:
+                valid_stars.append(star_to_add)
+            else:
+                print(f'Refusing to place system at x={star_to_add[0]}, y={star_to_add[1]}, too close to another system')
 
-    if len(valid_stars) > settings.galaxy.nr_stars:
+        else:
+            print(f'Refusing to place system at x={star_to_add[0]}, y={star_to_add[1]}, out of bounds after mirroring')
+
+    if len(valid_stars) + len(all_stars) > settings.galaxy.nr_stars:
         print(f'Trying to exceed maximum number of stars for given galaxy size: {settings.galaxy.nr_stars}')
         return
     for valid_star_to_add in valid_stars:
