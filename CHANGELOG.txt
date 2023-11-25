@@ -2,6 +2,10 @@ Changelog for Zodiac
 
 Version 1.1 Changes:
 - 'Large / Cluster' Galaxies are now separated into Large and Cluster. Cluster is the same size as large but allows for
-  71 star systems instead of 54.
+  71 star systems instead of 54
+- Two more mirror-modes (slash and backslash) which can be combined with the previous mirror modes allowing you to place
+  up to 8 systems symmetrically with a single click; systems that end up outside of the galaxy will not be placed
+  (this can happen because the galaxy has a rectangular shape but not a quadratic one)
+
 Version 1.1 Backwards Compatibility: Previous Large/Cluster Galaxies were actually large galaxies, they are now
                                      automatically converted to cluster galaxies when you load them.

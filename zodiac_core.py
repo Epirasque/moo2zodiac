@@ -24,12 +24,12 @@ ORION_COLOR = 'green'
 BLACK_HOLE_COLOR = 'purple'
 WORMHOLE_COLOR = 'teal'
 INDICATOR_COLORS = {}
-#INDICATOR_COLORS['4'] = 'darkorange'
-#INDICATOR_COLORS['6'] = 'darkorange1'
-#INDICATOR_COLORS['9'] = 'darkorange2'
-#INDICATOR_COLORS['12'] = 'darkorange3'
-#INDICATOR_COLORS['14'] = 'darkorange4'
-#INDICATOR_COLORS['18'] = 'firebrick4'
+# INDICATOR_COLORS['4'] = 'darkorange'
+# INDICATOR_COLORS['6'] = 'darkorange1'
+# INDICATOR_COLORS['9'] = 'darkorange2'
+# INDICATOR_COLORS['12'] = 'darkorange3'
+# INDICATOR_COLORS['14'] = 'darkorange4'
+# INDICATOR_COLORS['18'] = 'firebrick4'
 INDICATOR_NAMES = {}
 INDICATOR_NAMES['4'] = 'Standard Fuel Cells'
 INDICATOR_NAMES['6'] = 'Deuterium / Standard + Extended Tank'
@@ -207,7 +207,7 @@ def get_parsec_indicator_color(radius_in_parsec):
             f = 0.
         if f > 1:
             f = 1.
-        g = (6. - 2. * dx ) * f + dx
+        g = (6. - 2. * dx) * f + dx
         # inverted rainbow scale
         B = max(0., (3. - abs(g - 4.) - abs(g - 5.)) / 2.)
         G = max(0., (4. - abs(g - 2.) - abs(g - 4.)) / 2.)
@@ -222,7 +222,7 @@ def get_parsec_indicator_color(radius_in_parsec):
             G_hex = f'0{G_hex}'
         if len(R_hex) == 1:
             R_hex = f'0{R_hex}'
-        #hex_channel_color = hex(round(15 * (17 - radius_in_parsec)))[2:]
+        # hex_channel_color = hex(round(15 * (17 - radius_in_parsec)))[2:]
         color = f'#{R_hex}{G_hex}{B_hex}'
     return color, contrasting_font_color
 
@@ -257,8 +257,12 @@ def change_galaxy_size(canvas, settings, galaxy, all_stars, crosshair):
     canvas.config(width=canvas_width, height=canvas_height)
     clear_galaxy(canvas, all_stars, settings)
     settings.setSystemClickmode(SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A])
-    canvas.moveto(crosshair['vertical'], round(canvas_width / 2 - 1.5), 0)
-    canvas.moveto(crosshair['horizontal'], 0, round(canvas_height / 2 - 1.5))
+    canvas.coords(crosshair['vertical'], canvas_width / 2, 0, canvas_width / 2, canvas_height)
+    canvas.coords(crosshair['horizontal'], 0, canvas_height / 2, canvas_width, canvas_height / 2)
+    canvas.coords(crosshair['slash'], - canvas_height / 2 + canvas_width / 2, canvas_height,
+                  canvas_height / 2 + canvas_width / 2, 0)
+    canvas.coords(crosshair['backslash'], - canvas_height / 2 + canvas_width / 2, 0,
+                  canvas_height / 2 + canvas_width / 2, canvas_height)
 
 
 def create_wormhole(source, target, canvas, all_stars, settings):
@@ -310,7 +314,7 @@ def add_single_star(x, y, canvas, all_stars, settings):
                       x + STAR_RECT_RADIUS, y,
                       x, y + STAR_RECT_RADIUS]
     drawn_star = canvas.create_polygon(polygon_points, fill=starType.draw_color, outline=STAR_OUTLINE_COLOR)
-    #drawn_star = canvas.create_rectangle((event.x - STAR_RECT_RADIUS, event.y - STAR_RECT_RADIUS),
+    # drawn_star = canvas.create_rectangle((event.x - STAR_RECT_RADIUS, event.y - STAR_RECT_RADIUS),
     #                                     (event.x + STAR_RECT_RADIUS, event.y + STAR_RECT_RADIUS),
     #                                     fill=starType.draw_color)
     star = Star(x, y, starType, drawn_star)
@@ -321,24 +325,67 @@ def add_single_star(x, y, canvas, all_stars, settings):
     canvas.tag_bind(drawn_star, '<Button-3>', lambda delete_event: remove_star(canvas, star, all_stars, settings))
 
 
+def get_mirror_slashed_coordinates(star_to_add, width, height):
+    # project onto the diagonal from top left to bottom right
+    projected_x = round(height / 4. + width / 4. - star_to_add[1] / 2. + star_to_add[0] / 2.)
+
+    mirrored_x = 2 * projected_x - star_to_add[0]
+    mirrored_y = star_to_add[1] + 2 * (projected_x - star_to_add[0])
+    return (mirrored_x, mirrored_y)
+
+
+def get_mirror_backslashed_coordinates(star_to_add, width, height):
+    # project onto the diagonal from bottom left to top right
+    projected_x = round(- height / 4. + width / 4. + star_to_add[1] / 2. + star_to_add[0] / 2.)
+
+    mirrored_x = 2 * projected_x - star_to_add[0]
+    mirrored_y = star_to_add[1] - 2 * (projected_x - star_to_add[0])
+    return (mirrored_x, mirrored_y)
+
+
 def add_stars(event, canvas, all_stars, settings):
     mirror_horizontally = settings.mirror_mode['horizontal'].get()
     mirror_vertically = settings.mirror_mode['vertical'].get()
-    if len(all_stars) + 1 * (1 + mirror_horizontally) * (1 + mirror_vertically) > settings.galaxy.nr_stars:
-        print(f'Trying to exceed maximum number of stars for given galaxy size: {settings.galaxy.nr_stars}')
-        return
+    mirror_slash = settings.mirror_mode['slash'].get()
+    mirror_backslash = settings.mirror_mode['backslash'].get()
     if settings.blockOneClick:
         settings.blockOneClick = False
         return
     x = event.x
     y = event.y
-    add_single_star(x, y, canvas, all_stars, settings)
+    stars_to_add = [(x, y)]
     if mirror_horizontally:
-        add_single_star(canvas.winfo_width() - x, y, canvas, all_stars, settings)
+        stars_to_add.append((canvas.winfo_width() - x, y))
     if mirror_vertically:
-        add_single_star(x, canvas.winfo_height() - y, canvas, all_stars, settings)
-    if mirror_horizontally and mirror_vertically:
-        add_single_star(canvas.winfo_width() - x, canvas.winfo_height() - y, canvas, all_stars, settings)
+        new_stars_to_add = []
+        for star_to_add in stars_to_add:
+            new_stars_to_add.append((star_to_add[0], canvas.winfo_height() - star_to_add[1]))
+        stars_to_add.extend(new_stars_to_add)
+    if mirror_slash:
+        new_stars_to_add = []
+        for star_to_add in stars_to_add:
+            new_stars_to_add.append(
+                get_mirror_slashed_coordinates(star_to_add, canvas.winfo_width(), canvas.winfo_height()))
+        stars_to_add.extend(new_stars_to_add)
+    if mirror_backslash:
+        new_stars_to_add = []
+        for star_to_add in stars_to_add:
+            new_stars_to_add.append(
+                get_mirror_backslashed_coordinates(star_to_add, canvas.winfo_width(), canvas.winfo_height()))
+        stars_to_add.extend(new_stars_to_add)
+    valid_stars = []
+    for star_to_add in stars_to_add:
+        if star_to_add[0] >= 0 and star_to_add[0] <= canvas.winfo_width() \
+                and star_to_add[1] >= 0 and star_to_add[1] <= canvas.winfo_height():
+            valid_stars.append(star_to_add)
+        else:
+            print(f'Refusing to place star at x={star_to_add[0]}, y={star_to_add[1]}, out of bounds after mirroring')
+
+    if len(valid_stars) > settings.galaxy.nr_stars:
+        print(f'Trying to exceed maximum number of stars for given galaxy size: {settings.galaxy.nr_stars}')
+        return
+    for valid_star_to_add in valid_stars:
+        add_single_star(valid_star_to_add[0], valid_star_to_add[1], canvas, all_stars, settings)
     update_stats(all_stars, settings)
 
 
@@ -523,9 +570,22 @@ def main(argv):
                                             fill=CROSSHAIR_COLOR, width=3)
     crosshair_horizontal = canvas.create_line(0, canvas_height / 2, canvas_width, canvas_height / 2,
                                               fill=CROSSHAIR_COLOR, width=3)
-    crosshair = {'vertical': crosshair_vertical, 'horizontal': crosshair_horizontal}
-    canvas.moveto(crosshair['vertical'], round(canvas_width / 2 - 1.5), 0)
-    canvas.moveto(crosshair['horizontal'], 0, round(canvas_height / 2 - 1.5))
+    crosshair_slash = canvas.create_line(- canvas_height / 2 + canvas_width / 2, canvas_height,
+                                         canvas_height / 2 + canvas_width / 2, 0,
+                                         fill=CROSSHAIR_COLOR, width=3)
+    crosshair_backslash = canvas.create_line(- canvas_height / 2 + canvas_width / 2, 0,
+                                             canvas_height / 2 + canvas_width / 2, canvas_height,
+                                             fill=CROSSHAIR_COLOR, width=3)
+    crosshair = {'vertical': crosshair_vertical, 'horizontal': crosshair_horizontal,
+                 'slash': crosshair_slash, 'backslash': crosshair_backslash}
+    # center = canvas.create_oval((canvas_width / 2) - 3, (canvas_height / 2) - 3, (canvas_width / 2) + 3,
+    #                            (canvas_height / 2) + 3, fill=ORION_COLOR)
+    canvas.coords(crosshair['vertical'], canvas_width / 2, 0, canvas_width / 2, canvas_height)
+    canvas.coords(crosshair['horizontal'], 0, canvas_height / 2, canvas_width, canvas_height / 2)
+    canvas.coords(crosshair['slash'], - canvas_height / 2 + canvas_width / 2, canvas_height,
+                  canvas_height / 2 + canvas_width / 2, 0)
+    canvas.coords(crosshair['backslash'], - canvas_height / 2 + canvas_width / 2, 0,
+                  canvas_height / 2 + canvas_width / 2, canvas_height)
 
     Label(button_window, text='GALAXY SIZE', relief=GROOVE) \
         .grid(row=0, column=0, sticky=W, padx=5, pady=5)
@@ -534,7 +594,10 @@ def main(argv):
 
     mirror_horizontally = BooleanVar()
     mirror_vertically = BooleanVar()
-    mirror_mode = {'horizontal': mirror_horizontally, 'vertical': mirror_vertically}
+    mirror_slash = BooleanVar()
+    mirror_backslash = BooleanVar()
+    mirror_mode = {'horizontal': mirror_horizontally, 'vertical': mirror_vertically,
+                   'slash': mirror_slash, 'backslash': mirror_backslash}
     settings = Settings(STAR_TYPES[NORMAL_STAR], GALAXIES[GALAXY_HUGE], SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A],
                         galaxy_radio, parsec_indicator_toggles, mirror_mode)
 
@@ -597,6 +660,14 @@ def main(argv):
     Checkbutton(button_window, text='Mirror Vertically', indicatoron=False, variable=mirror_vertically,
                 activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
         .grid(row=13, column=0, sticky=W, padx=5, pady=5)
+
+    Checkbutton(button_window, text='Mirror /', indicatoron=False, variable=mirror_slash,
+                activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
+        .grid(row=12, column=1, sticky=W, padx=5, pady=5)
+
+    Checkbutton(button_window, text='Mirror \\', indicatoron=False, variable=mirror_backslash,
+                activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
+        .grid(row=13, column=1, sticky=W, padx=5, pady=5)
 
     Label(button_window, text='RANGE INDICATORS', relief=GROOVE) \
         .grid(row=14, column=2, sticky=W, padx=5, pady=5)
@@ -690,8 +761,9 @@ def main(argv):
         if not isfile(f'ZODIAC{save_slot}.LUA'):
             load_button.config(state=DISABLED)
 
-        Button(button_window, text=f'Save ZODIAC{save_slot}', command=lambda save_slot=save_slot, load_button=load_button:
-        export_map(all_stars, title_entry, save_slot, settings.galaxy, load_button)) \
+        Button(button_window, text=f'Save ZODIAC{save_slot}',
+               command=lambda save_slot=save_slot, load_button=load_button:
+               export_map(all_stars, title_entry, save_slot, settings.galaxy, load_button)) \
             .grid(row=15 + save_slot, column=1, sticky=W, padx=5, pady=5)
 
     canvas.grid(row=1, column=0, sticky=NW)
