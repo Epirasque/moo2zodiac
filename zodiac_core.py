@@ -510,10 +510,10 @@ def main(argv):
     SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A] = SystemClickmode(MODE_PLACE_WORMHOLE_A, canvas)
     SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_B] = SystemClickmode(MODE_PLACE_WORMHOLE_B, canvas)
 
-    app_width = canvas_width + 400 + 80
-    app_height = canvas_height + 50 + 60
+    app_width = canvas_width + 530
+    app_height = canvas_height + 140
 
-    root.geometry(f'{app_width}x{app_height}+50+20')
+    root.geometry(f'{app_width}x{app_height}+50+10')
     root.resizable(True, True)
 
     all_stars = []
@@ -599,7 +599,7 @@ def main(argv):
         .grid(row=13, column=0, sticky=W, padx=5, pady=5)
 
     Label(button_window, text='RANGE INDICATORS', relief=GROOVE) \
-        .grid(row=14, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=14, column=2, sticky=W, padx=5, pady=5)
     parsec_indicator_toggles['1'] = BooleanVar()  # 1 Parsec (singular) has different text
     parsecIndicators = {}
     button_color, contrasting_font_color = get_parsec_indicator_color(1)
@@ -607,7 +607,7 @@ def main(argv):
                 activebackground=button_color, bg=button_color, selectcolor=button_color,
                 fg=contrasting_font_color, activeforeground=contrasting_font_color,
                 command=lambda: change_parsec_indicator(canvas, parsecIndicators, 1, parsec_indicator_toggles)) \
-        .grid(row=15, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=15, column=2, sticky=W, padx=5, pady=5)
     for parsec_radius in range(2, 10 + 1):
         parsec_radius_str = str(parsec_radius)
         parsec_indicator_toggles[parsec_radius_str] = BooleanVar()
@@ -622,28 +622,28 @@ def main(argv):
                     command=lambda parsec_radius=parsec_radius: change_parsec_indicator(canvas, parsecIndicators,
                                                                                         parsec_radius,
                                                                                         parsec_indicator_toggles)) \
-            .grid(row=15 + parsec_radius, column=0, sticky=W, padx=5, pady=5)
+            .grid(row=15 - 1 + parsec_radius, column=2, sticky=W, padx=5, pady=5)
     parsec_indicator_toggles['12'] = BooleanVar()
     button_color, contrasting_font_color = get_parsec_indicator_color(12)
     Checkbutton(button_window, text=INDICATOR_NAMES['12'], indicatoron=False, variable=parsec_indicator_toggles['12'],
                 activebackground=button_color, bg=button_color, selectcolor=button_color,
                 fg=contrasting_font_color, activeforeground=contrasting_font_color,
                 command=lambda: change_parsec_indicator(canvas, parsecIndicators, 12, parsec_indicator_toggles)) \
-        .grid(row=26, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=26, column=2, sticky=W, padx=5, pady=5)
     parsec_indicator_toggles['14'] = BooleanVar()
     button_color, contrasting_font_color = get_parsec_indicator_color(14)
     Checkbutton(button_window, text=INDICATOR_NAMES['14'], indicatoron=False, variable=parsec_indicator_toggles['14'],
                 activebackground=button_color, bg=button_color, selectcolor=button_color,
                 fg=contrasting_font_color, activeforeground=contrasting_font_color,
                 command=lambda: change_parsec_indicator(canvas, parsecIndicators, 14, parsec_indicator_toggles)) \
-        .grid(row=27, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=27, column=2, sticky=W, padx=5, pady=5)
     parsec_indicator_toggles['18'] = BooleanVar()
     button_color, contrasting_font_color = get_parsec_indicator_color(18)
     Checkbutton(button_window, text=INDICATOR_NAMES['18'], indicatoron=False, variable=parsec_indicator_toggles['18'],
                 activebackground=button_color, bg=button_color, selectcolor=button_color,
                 fg=contrasting_font_color, activeforeground=contrasting_font_color,
                 command=lambda: change_parsec_indicator(canvas, parsecIndicators, 18, parsec_indicator_toggles)) \
-        .grid(row=28, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=28, column=2, sticky=W, padx=5, pady=5)
 
     Label(canvas_header_frame, text='Galaxy Title').grid(row=0, column=0, sticky=W, padx=1, pady=5)
     title_entry = Entry(canvas_header_frame, width=20)
@@ -675,6 +675,10 @@ def main(argv):
 
     update_stats(all_stars, settings)
 
+    Label(button_window, text='GALAXY EXPORT', relief=GROOVE) \
+        .grid(row=14, column=0, sticky=W, padx=5, pady=5)
+    Label(button_window, text='GALAXY IMPORT', relief=GROOVE) \
+        .grid(row=14, column=1, sticky=W, padx=5, pady=5)
     load_radio = IntVar()
     for save_slot in range(10):
         # save_slot=save_slot prevents the value to be evaluated/overwritten later on
@@ -682,13 +686,13 @@ def main(argv):
                                   value=save_slot,
                                   command=lambda save_slot=save_slot: import_map(all_stars, title_entry, save_slot,
                                                                                  settings, canvas, crosshair))
-        load_button.grid(row=save_slot, column=3, sticky=W, padx=5, pady=5)
+        load_button.grid(row=15 + save_slot, column=0, sticky=W, padx=5, pady=5)
         if not isfile(f'ZODIAC{save_slot}.LUA'):
             load_button.config(state=DISABLED)
 
         Button(button_window, text=f'Save ZODIAC{save_slot}', command=lambda save_slot=save_slot, load_button=load_button:
         export_map(all_stars, title_entry, save_slot, settings.galaxy, load_button)) \
-            .grid(row=save_slot, column=2, sticky=W, padx=5, pady=5)
+            .grid(row=15 + save_slot, column=1, sticky=W, padx=5, pady=5)
 
     canvas.grid(row=1, column=0, sticky=NW)
     canvas.bind('<Button-1>', lambda add_event: add_stars(add_event, canvas, all_stars, settings))
