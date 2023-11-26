@@ -1,3 +1,4 @@
+import json
 import math
 import sys
 from os.path import isfile
@@ -6,24 +7,37 @@ from tkinter.font import Font
 
 VERSION = "v1.1"
 
-# TODO: use git?
-# TODO: zoom-buttons (scale-factor)
+# TODO: change current selected system
+# TODO: dark mode
+# TODO: system colors
+# TODO: incorporate SHOWRION; LOWER_C; (system-content-mirroring?)
+
+# TODO: random populate button(s)?
+# TODO: zoom-buttons? (scale-factor)
 # TODO: shift everything with arrowkeys?
 # ...
 
 # GUI
-STAR_DRAWING_RADIUS = 8
+SYSTEM_DRAWING_RADIUS = 8
+STAR_COLOR_RADIUS = 3
 MINIMAL_STAR_SEPARATION_DISTANCE = 10
 WORMHOLE_SOURCE_CIRCLE_RADIUS = 10
 SCALE_FACTOR = .7
 GALAXY_COLOR = '#161616'
 CROSSHAIR_COLOR = '#303030'
 STAR_OUTLINE_COLOR = '#454545'
-NORMAL_STAR_COLOR = 'white'
+NORMAL_SYSTEM_COLOR = 'white'
 HOMEWORLD_COLOR = 'burlywood3'
 ORION_COLOR = 'green'
 BLACK_HOLE_COLOR = 'purple'
 WORMHOLE_COLOR = 'teal'
+RANDOM_STAR_COLOR = 'grey'
+BLUE_STAR_COLOR = 'blue'
+WHITE_STAR_COLOR = 'white'
+YELLOW_STAR_COLOR = 'yellow'
+ORANGE_STAR_COLOR = 'orange'
+RED_STAR_COLOR = 'red'
+BROWN_STAR_COLOR = 'brown'
 INDICATOR_COLORS = {}
 # INDICATOR_COLORS['4'] = 'darkorange'
 # INDICATOR_COLORS['6'] = 'darkorange1'
@@ -53,6 +67,13 @@ NORMAL_STAR = 'Normal System'
 HOMEWORLD = 'Homeworld'
 ORION = 'Orion'
 BLACK_HOLE = 'Black Hole'
+RANDOM_STAR = 'Random'
+BLUE_STAR = 'Blue'
+WHITE_STAR = 'White'
+YELLOW_STAR = 'Yellow'
+ORANGE_STAR = 'Orange'
+RED_STAR = 'Red'
+BROWN_STAR = 'Brown'
 GALAXY_SMALL = 'Small Galaxy'
 GALAXY_MEDIUM = 'Medium Galaxy'
 GALAXY_LARGE = 'Large Galaxy'
@@ -88,28 +109,31 @@ class SystemClickmode:
 
 
 class Galaxy:
-    def __init__(self, size_description, width, height, nr_stars, radio_button_id):
+    def __init__(self, size_description, width, height, nr_systems, radio_button_id):
         self.size_description = size_description
         self.width = width
         self.height = height
-        self.nr_stars = nr_stars
+        self.nr_systems = nr_systems
         self.radio_button_id = radio_button_id
 
 
-class Star:
-    def __init__(self, x, y, starType, drawn_star):
+class System:
+    def __init__(self, x, y, systemType, starColor, drawnSystem, drawnStar):
         self.x = round(x / SCALE_FACTOR)
         self.y = round(y / SCALE_FACTOR)
         self.canvas_x = x
         self.canvas_y = y
-        self.starType = starType
-        self.drawn_star = drawn_star
+        self.systemType = systemType
+        self.starColor = starColor
+        self.drawnSystem = drawnSystem
+        self.drawnStar = drawnStar
         self.wormhole_partner = None
         self.wormhole = None
         self.wormholeMarker = None
 
     def delete(self, canvas):
-        canvas.delete(self.drawn_star)
+        canvas.delete(self.drawnSystem)
+        canvas.delete(self.drawnStar)
         if self.wormholeMarker is not None:
             canvas.delete(self.wormholeMarker)
         self.dissolve_wormhole()
@@ -123,10 +147,16 @@ class Star:
         self.wormhole = None
 
     def __str__(self):
-        return f'{self.starType.name}, {self.x}, {self.y}, {self.wormhole}'
+        return f'{self.systemType.name}, {self.x}, {self.y}, {self.wormhole}'
 
 
-class StarType:
+class SystemType:
+    def __init__(self, name, draw_color):
+        self.name = name
+        self.draw_color = draw_color
+
+
+class StarColor:
     def __init__(self, name, draw_color):
         self.name = name
         self.draw_color = draw_color
@@ -151,8 +181,10 @@ class Wormhole:
 
 
 class Settings:
-    def __init__(self, starType, galaxy, systemClickmode, galaxy_radio, parsec_indicator_toggles, mirror_mode):
-        self.starType = starType
+    def __init__(self, systemType, starColor, galaxy, systemClickmode, galaxy_radio, parsec_indicator_toggles,
+                 mirror_mode):
+        self.systemType = systemType
+        self.starColor = starColor
         self.galaxy = galaxy
         self.systemClickmode = systemClickmode
         self.galaxy_radio = galaxy_radio
@@ -160,8 +192,11 @@ class Settings:
         self.parsec_indicator_toggles = parsec_indicator_toggles
         self.mirror_mode = mirror_mode
 
-    def setStarType(self, starType):
-        self.starType = starType
+    def setSystemType(self, systemType):
+        self.systemType = systemType
+
+    def setStarColor(self, starColor):
+        self.starColor = starColor
 
     def setGalaxy(self, galaxy):
         self.galaxy = galaxy
@@ -181,11 +216,19 @@ GALAXIES[GALAXY_MEDIUM] = Galaxy(GALAXY_MEDIUM, 759, 600, 36, 1)
 GALAXIES[GALAXY_LARGE] = Galaxy(GALAXY_LARGE, 1012, 800, 54, 2)
 GALAXIES[GALAXY_CLUSTER] = Galaxy(GALAXY_CLUSTER, 1012, 800, 71, 2)
 GALAXIES[GALAXY_HUGE] = Galaxy(GALAXY_HUGE, 1518, 1200, 71, 3)
-STAR_TYPES = {}
-STAR_TYPES[NORMAL_STAR] = StarType(NORMAL_STAR, NORMAL_STAR_COLOR)
-STAR_TYPES[HOMEWORLD] = StarType(HOMEWORLD, HOMEWORLD_COLOR)
-STAR_TYPES[ORION] = StarType(ORION, ORION_COLOR)
-STAR_TYPES[BLACK_HOLE] = StarType(BLACK_HOLE, BLACK_HOLE_COLOR)
+SYSTEM_TYPES = {}
+SYSTEM_TYPES[NORMAL_STAR] = SystemType(NORMAL_STAR, NORMAL_SYSTEM_COLOR)
+SYSTEM_TYPES[HOMEWORLD] = SystemType(HOMEWORLD, HOMEWORLD_COLOR)
+SYSTEM_TYPES[ORION] = SystemType(ORION, ORION_COLOR)
+SYSTEM_TYPES[BLACK_HOLE] = SystemType(BLACK_HOLE, BLACK_HOLE_COLOR)
+STAR_COLORS = {}
+STAR_COLORS[RANDOM_STAR] = StarColor(RANDOM_STAR, RANDOM_STAR_COLOR)
+STAR_COLORS[BLUE_STAR] = StarColor(BLUE_STAR, BLUE_STAR_COLOR)
+STAR_COLORS[WHITE_STAR] = StarColor(WHITE_STAR, WHITE_STAR_COLOR)
+STAR_COLORS[YELLOW_STAR] = StarColor(YELLOW_STAR, YELLOW_STAR_COLOR)
+STAR_COLORS[ORANGE_STAR] = StarColor(ORANGE_STAR, ORANGE_STAR_COLOR)
+STAR_COLORS[RED_STAR] = StarColor(RED_STAR, RED_STAR_COLOR)
+STAR_COLORS[BROWN_STAR] = StarColor(BROWN_STAR, BROWN_STAR_COLOR)
 
 
 def get_parsec_indicator_color(radius_in_parsec):
@@ -302,28 +345,40 @@ def leftclick_star(canvas, star, settings, all_stars):
         print('Wormhole from ' + str(source) + " to " + str(star))
         settings.setSystemClickmode(SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A])
         # TODO: prevent orion-wormholes? TODO: try out what happens if wormholes to blackholes are allowed!
-        if source != star and source.starType != STAR_TYPES[BLACK_HOLE] and star.starType != STAR_TYPES[BLACK_HOLE]:
+        if source != star and source.systemType != SYSTEM_TYPES[BLACK_HOLE] and star.systemType != SYSTEM_TYPES[
+            BLACK_HOLE]:
             create_wormhole(source, star, canvas, all_stars, settings)
         else:
             print('Ignoring wormhole attempt: source and target are identical')
 
 
-def add_single_star(x, y, canvas, all_stars, settings):
-    starType = settings.starType
-    polygon_points = [x - STAR_DRAWING_RADIUS, y,
-                      x, y - STAR_DRAWING_RADIUS,
-                      x + STAR_DRAWING_RADIUS, y,
-                      x, y + STAR_DRAWING_RADIUS]
-    drawn_star = canvas.create_polygon(polygon_points, fill=starType.draw_color, outline=STAR_OUTLINE_COLOR)
-    # drawn_star = canvas.create_rectangle((event.x - STAR_RECT_RADIUS, event.y - STAR_RECT_RADIUS),
+def add_single_system(x, y, canvas, all_stars, settings):
+    systemType = settings.systemType
+    starColor = settings.starColor
+    if systemType.name == BLACK_HOLE:
+        starFillColor = BLACK_HOLE_COLOR
+    else:
+        starFillColor = starColor.draw_color
+    polygon_points = [x - SYSTEM_DRAWING_RADIUS, y,
+                      x, y - SYSTEM_DRAWING_RADIUS,
+                      x + SYSTEM_DRAWING_RADIUS, y,
+                      x, y + SYSTEM_DRAWING_RADIUS]
+    drawnSystem = canvas.create_polygon(polygon_points, fill=systemType.draw_color, outline=STAR_OUTLINE_COLOR)
+    drawnStar = canvas.create_oval(x - STAR_COLOR_RADIUS, y - STAR_COLOR_RADIUS,
+                                   x + STAR_COLOR_RADIUS, y + STAR_COLOR_RADIUS,
+                                   fill=starFillColor, outline=STAR_OUTLINE_COLOR)
+    # drawnSystem = canvas.create_rectangle((event.x - STAR_RECT_RADIUS, event.y - STAR_RECT_RADIUS),
     #                                     (event.x + STAR_RECT_RADIUS, event.y + STAR_RECT_RADIUS),
-    #                                     fill=starType.draw_color)
-    star = Star(x, y, starType, drawn_star)
+    #                                     fill=systemType.draw_color)
+    star = System(x, y, systemType, starColor, drawnSystem, drawnStar)
     all_stars.append(star)
     refresh_marker_layer_order(canvas)
-    canvas.tag_bind(drawn_star, '<Button-1>',
+    canvas.tag_bind(drawnSystem, '<Button-1>',
                     lambda star_clicked_event: leftclick_star(canvas, star, settings, all_stars))
-    canvas.tag_bind(drawn_star, '<Button-3>', lambda delete_event: remove_star(canvas, star, all_stars, settings))
+    canvas.tag_bind(drawnSystem, '<Button-3>', lambda delete_event: remove_star(canvas, star, all_stars, settings))
+    canvas.tag_bind(drawnStar, '<Button-1>',
+                    lambda star_clicked_event: leftclick_star(canvas, star, settings, all_stars))
+    canvas.tag_bind(drawnStar, '<Button-3>', lambda delete_event: remove_star(canvas, star, all_stars, settings))
 
 
 def get_mirror_slashed_coordinates(star_to_add, width, height):
@@ -344,7 +399,7 @@ def get_mirror_backslashed_coordinates(star_to_add, width, height):
     return (mirrored_x, mirrored_y)
 
 
-def add_stars(event, canvas, all_stars, settings):
+def add_system(event, canvas, all_systems, settings):
     mirror_horizontally = settings.mirror_mode['horizontal'].get()
     mirror_vertically = settings.mirror_mode['vertical'].get()
     mirror_slash = settings.mirror_mode['slash'].get()
@@ -380,54 +435,57 @@ def add_stars(event, canvas, all_stars, settings):
         for star_to_add in stars_to_add:
             new_stars_to_add.append((canvas.winfo_width() - star_to_add[0], canvas.winfo_height() - star_to_add[1]))
         stars_to_add.extend(new_stars_to_add)
-    valid_stars = []
+    valid_systems = []
     for star_to_add in stars_to_add:
         if star_to_add[0] >= 0 and star_to_add[0] <= canvas.winfo_width() \
                 and star_to_add[1] >= 0 and star_to_add[1] <= canvas.winfo_height():
             still_valid = True
-            for star in all_stars:
-                if math.dist([star.canvas_x, star.canvas_y], [star_to_add[0], star_to_add[1]]) < MINIMAL_STAR_SEPARATION_DISTANCE:
+            for star in all_systems:
+                if math.dist([star.canvas_x, star.canvas_y],
+                             [star_to_add[0], star_to_add[1]]) < MINIMAL_STAR_SEPARATION_DISTANCE:
                     still_valid = False
                     break
-            for new_star in valid_stars:
-                if math.dist([new_star[0], new_star[1]], [star_to_add[0], star_to_add[1]]) < MINIMAL_STAR_SEPARATION_DISTANCE:
+            for new_star in valid_systems:
+                if math.dist([new_star[0], new_star[1]],
+                             [star_to_add[0], star_to_add[1]]) < MINIMAL_STAR_SEPARATION_DISTANCE:
                     still_valid = False
                     break
             if still_valid == True:
-                valid_stars.append(star_to_add)
+                valid_systems.append(star_to_add)
             else:
-                print(f'Refusing to place system at x={star_to_add[0]}, y={star_to_add[1]}, too close to another system')
+                print(
+                    f'Refusing to place system at x={star_to_add[0]}, y={star_to_add[1]}, too close to another system')
 
         else:
             print(f'Refusing to place system at x={star_to_add[0]}, y={star_to_add[1]}, out of bounds after mirroring')
 
-    if len(valid_stars) + len(all_stars) > settings.galaxy.nr_stars:
-        print(f'Trying to exceed maximum number of stars for given galaxy size: {settings.galaxy.nr_stars}')
+    if len(valid_systems) + len(all_systems) > settings.galaxy.nr_systems:
+        print(f'Trying to exceed maximum number of stars for given galaxy size: {settings.galaxy.nr_systems}')
         return
-    for valid_star_to_add in valid_stars:
-        add_single_star(valid_star_to_add[0], valid_star_to_add[1], canvas, all_stars, settings)
-    update_stats(all_stars, settings)
+    for valid_system_to_add in valid_systems:
+        add_single_system(valid_system_to_add[0], valid_system_to_add[1], canvas, all_systems, settings)
+    update_stats(all_systems, settings)
 
 
-def format_star_output(all_stars):
+def format_system_output(all_systems):
     output = ''
-    for star in all_stars:
-        if star.wormhole_partner is not None:
-            output += f'{{star_type=\'{star.starType.name}\', x={star.x}, y={star.y}, wormhole_partner_x={star.wormhole_partner.x}, wormhole_partner_y={star.wormhole_partner.y}}}, '
+    for system in all_systems:
+        if system.wormhole_partner is not None:
+            output += f'{{"system_type":\"{system.systemType.name}\", "star_color":\"{system.starColor.name}\", "x":{system.x}, "y":{system.y}, "wormhole_partner_x":{system.wormhole_partner.x}, "wormhole_partner_y":{system.wormhole_partner.y}}}, '
         else:
-            output += f'{{star_type=\'{star.starType.name}\', x={star.x}, y={star.y}}}, '
+            output += f'{{"system_type":\"{system.systemType.name}\", "star_color":\"{system.starColor.name}\", "x":{system.x}, "y":{system.y}}}, '
     output = output[:-2]
     print(output)
     return output
 
 
-def export_map(all_stars, title_entry, save_slot, galaxy, load_button):
-    nr_stars = len(all_stars)
+def export_map(all_systems, title_entry, save_slot, galaxy, load_button):
+    nr_stars = len(all_systems)
     title = title_entry.get()
     galaxy_size = galaxy.size_description
     print(f'Exporting {nr_stars} stars for slot {save_slot}...')
     saveslot_output = f'{save_slot}'
-    star_output = format_star_output(all_stars)
+    system_output = format_system_output(all_systems)
     with open('ZODIAC_TEMPLATE.CFG', 'r') as template_file:
         with open(f'ZODIAC{save_slot}.CFG', 'w') as file_to_save:
             for line in template_file:
@@ -442,7 +500,7 @@ def export_map(all_stars, title_entry, save_slot, galaxy, load_button):
         with open(f'ZODIAC{save_slot}.LUA', 'w') as file_to_save:
             for line in template_file:
                 if TEMPLATE_DRAWN_STARS_MARKER in line:
-                    line = line.replace(TEMPLATE_DRAWN_STARS_MARKER, star_output)
+                    line = line.replace(TEMPLATE_DRAWN_STARS_MARKER, system_output)
                 if TITLE_MARKER in line:
                     line = line.replace(TITLE_MARKER, title)
                 if GALAXY_SIZE_MARKER in line:
@@ -454,10 +512,21 @@ def export_map(all_stars, title_entry, save_slot, galaxy, load_button):
     load_button.select()
 
 
-def import_map(all_stars, title_entry, save_slot, settings, canvas, crosshair):
+def load_robustly_as_json(raw_string, version_float):
+    print(f'Parsing {raw_string} with version {version_float}')
+    if version_float < 1.1:
+        return json.loads(raw_string.replace('\'', '\"').replace('=', '\":').replace(', ', ', \"').replace('{','{\"'))
+    else:
+        return json.loads(raw_string)
+
+
+def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair):
     galaxy_size_line = None
     title_line = None
     systems_line = None
+    version_line = None
+    originalSystemType = settings.systemType
+    originalStarColor = settings.starColor
     filename = f'ZODIAC{save_slot}.LUA'
     if not isfile(filename):
         print(f'Cannot load {filename}, file not found')
@@ -469,63 +538,83 @@ def import_map(all_stars, title_entry, save_slot, settings, canvas, crosshair):
                 galaxy_size_line = line
             elif 'TITLE=' in line:
                 title_line = line
-            elif 'star_type=' in line:
+            elif 'VERSION=' in line:
+                version_line = line
+            elif '\"system_type\":' in line or 'star_type=' in line:
                 systems_line = line
             if galaxy_size_line is not None and title_line is not None and systems_line is not None:
                 break
     loaded_galaxy_size_string = galaxy_size_line.strip().split('=')[1].strip().replace('\'', '')
+    try:
+        version_float = float(version_line.strip().split('=')[1].strip().replace('\'', '').replace('v', ''))
+    except:
+        version_float = 0.0
     loaded_title_string = title_line.strip().split('=')[1].strip().replace('\'', '')
-    loaded_systems_strings = systems_line.strip().split('}, {')
+    crude_split_systems_strings = systems_line.strip().split('}, {')
     print('Loaded values:')
     print(f'Title: \'{loaded_title_string}\'')
     print(f'Galaxy_Size: \'{loaded_galaxy_size_string}\'')
     print(f'Systems:')
-    for loaded_system_string in loaded_systems_strings:
-        print(f'\'{loaded_system_string}\'')
+    loaded_systems_strings = []
+    for crude_split_system_string in crude_split_systems_strings:
+        properly_split_system_string = '{' + crude_split_system_string.replace('{', '').replace('}', '') + '}'
+        print(f'\'{properly_split_system_string}\'')
+        loaded_systems_strings.append(properly_split_system_string)
     title_entry.delete(0, len(title_entry.get()))
     title_entry.insert(0, loaded_title_string)
     if loaded_galaxy_size_string == GALAXY_LARGE_HUGE_LEGACY:
         loaded_galaxy_size_string = GALAXY_CLUSTER
-    change_galaxy_size(canvas, settings, GALAXIES[loaded_galaxy_size_string], all_stars, crosshair)
+    change_galaxy_size(canvas, settings, GALAXIES[loaded_galaxy_size_string], allSystems, crosshair)
     for loaded_system_string in loaded_systems_strings:
-        system_parameters = loaded_system_string.replace('}', '').replace('{', '').split(', ')
-        settings.starType = STAR_TYPES[system_parameters[0].split('=')[1].replace('\'', '')]
-        addStarEvent = Event()
-        addStarEvent.x = round(int(system_parameters[1].split('=')[1]) * SCALE_FACTOR)
-        addStarEvent.y = round(int(system_parameters[2].split('=')[1]) * SCALE_FACTOR)
-        add_stars(addStarEvent, canvas, all_stars, settings)
+        system_parameters = load_robustly_as_json(loaded_system_string, version_float)
+        if 'system_type' in system_parameters:
+            settings.systemType = SYSTEM_TYPES[system_parameters['system_type']]
+        else:
+            settings.systemType = SYSTEM_TYPES[system_parameters['star_type']]
+        addSystemEvent = Event()
+        addSystemEvent.x = round(int(system_parameters['x']) * SCALE_FACTOR)
+        addSystemEvent.y = round(int(system_parameters['y']) * SCALE_FACTOR)
+        if 'star_color' in system_parameters:
+            settings.starColor = STAR_COLORS[system_parameters['star_color']]
+        else:
+            settings.starColor = STAR_COLORS[RANDOM_STAR]
+        add_system(addSystemEvent, canvas, allSystems, settings)
 
     # ensure all stars exist before creating wormholes, still better than searching for non-existing stars
     for loaded_system_string in loaded_systems_strings:
-        system_parameters = loaded_system_string.replace('}', '').replace('{', '').split(', ')
-        if len(system_parameters) > 3:
+        # system_parameters = loaded_system_string.replace('}', '').replace('{', '').split(', ')
+        system_parameters = load_robustly_as_json(loaded_system_string, version_float)
+        if 'wormhole_partner_x' in system_parameters and 'wormhole_partner_y' in system_parameters:
             found = False
-            source_x = int(system_parameters[1].split('=')[1])
-            source_y = int(system_parameters[2].split('=')[1])
-            target_x = int(system_parameters[3].split('=')[1])
-            target_y = int(system_parameters[4].split('=')[1])
-            for source in all_stars:
+            source_x = int(system_parameters['x'])
+            source_y = int(system_parameters['y'])
+            target_x = int(system_parameters['wormhole_partner_x'])
+            target_y = int(system_parameters['wormhole_partner_y'])
+            for source in allSystems:
                 if source.wormhole_partner is None and source.x == source_x and source.y == source_y:
-                    for target in all_stars:
+                    for target in allSystems:
                         if target.wormhole_partner is None and target.x == target_x and target.y == target_y:
                             found = True
-                            create_wormhole(source, target, canvas, all_stars, settings)
+                            create_wormhole(source, target, canvas, allSystems, settings)
                             break
                 if found == True:
                     break
 
+    settings.setSystemType(originalSystemType)
+    settings.setStarColor(originalStarColor)
+
 
 def update_stats(all_stars, settings):
     stat_labels[STARS_REMAINING].config(
-        text=f'{settings.galaxy.nr_stars - len(all_stars)} / {settings.galaxy.nr_stars}')
+        text=f'{settings.galaxy.nr_systems - len(all_stars)} / {settings.galaxy.nr_systems}')
     stat_labels[NORMALS_PLACED].config(
-        text=f'{int(sum(star.starType == STAR_TYPES[NORMAL_STAR] for star in all_stars))}')
+        text=f'{int(sum(star.systemType == SYSTEM_TYPES[NORMAL_STAR] for star in all_stars))}')
     stat_labels[HOMEWORLDS_PLACED].config(
-        text=f'{int(sum(star.starType == STAR_TYPES[HOMEWORLD] for star in all_stars))}')
+        text=f'{int(sum(star.systemType == SYSTEM_TYPES[HOMEWORLD] for star in all_stars))}')
     stat_labels[ORIONS_PLACED].config(
-        text=f'{int(sum(star.starType == STAR_TYPES[ORION] for star in all_stars))}')
+        text=f'{int(sum(star.systemType == SYSTEM_TYPES[ORION] for star in all_stars))}')
     stat_labels[BLACK_HOLES_PLACED].config(
-        text=f'{int(sum(star.starType == STAR_TYPES[BLACK_HOLE] for star in all_stars))}')
+        text=f'{int(sum(star.systemType == SYSTEM_TYPES[BLACK_HOLE] for star in all_stars))}')
     stat_labels[WORMHOLES_PLACED].config(
         text=f'{int(sum(star.wormhole_partner is not None for star in all_stars) / 2)}')
 
@@ -619,7 +708,8 @@ def main(argv):
     mirror_center = BooleanVar()
     mirror_mode = {'horizontal': mirror_horizontally, 'vertical': mirror_vertically,
                    'slash': mirror_slash, 'backslash': mirror_backslash, 'center': mirror_center}
-    settings = Settings(STAR_TYPES[NORMAL_STAR], GALAXIES[GALAXY_HUGE], SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A],
+    settings = Settings(SYSTEM_TYPES[NORMAL_STAR], STAR_COLORS[RANDOM_STAR], GALAXIES[GALAXY_HUGE],
+                        SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A],
                         galaxy_radio, parsec_indicator_toggles, mirror_mode)
 
     Radiobutton(button_window, text=GALAXY_SMALL, indicatoron=False, variable=galaxy_radio, value=0,
@@ -650,26 +740,61 @@ def main(argv):
 
     Label(button_window, text='PLACEMENT TYPE', relief=GROOVE) \
         .grid(row=6, column=0, sticky=W, padx=5, pady=5)
-    star_type_radio = IntVar()
-    star_type_radio.set(0)
-    Radiobutton(button_window, text=NORMAL_STAR, indicatoron=False, variable=star_type_radio, value=0,
-                activebackground=NORMAL_STAR_COLOR, bg=NORMAL_STAR_COLOR, selectcolor=NORMAL_STAR_COLOR,
-                command=lambda: settings.setStarType(STAR_TYPES[NORMAL_STAR])) \
+    system_type_radio = IntVar()
+    system_type_radio.set(0)
+    Radiobutton(button_window, text=NORMAL_STAR, indicatoron=False, variable=system_type_radio, value=0,
+                activebackground=NORMAL_SYSTEM_COLOR, bg=NORMAL_SYSTEM_COLOR, selectcolor=NORMAL_SYSTEM_COLOR,
+                command=lambda: settings.setSystemType(SYSTEM_TYPES[NORMAL_STAR])) \
         .grid(row=7, column=0, sticky=W, padx=5, pady=5)
-    Radiobutton(button_window, text=HOMEWORLD, indicatoron=False, variable=star_type_radio, value=1,
+    Radiobutton(button_window, text=HOMEWORLD, indicatoron=False, variable=system_type_radio, value=1,
                 activebackground=HOMEWORLD_COLOR, bg=HOMEWORLD_COLOR, selectcolor=HOMEWORLD_COLOR,
-                command=lambda: settings.setStarType(STAR_TYPES[HOMEWORLD])) \
+                command=lambda: settings.setSystemType(SYSTEM_TYPES[HOMEWORLD])) \
         .grid(row=8, column=0, sticky=W, padx=5, pady=5)
-    Radiobutton(button_window, text=ORION, indicatoron=False, variable=star_type_radio, value=2,
+    Radiobutton(button_window, text=ORION, indicatoron=False, variable=system_type_radio, value=2,
                 activebackground=ORION_COLOR, bg=ORION_COLOR, selectcolor=ORION_COLOR,
                 fg='white', activeforeground='white',
-                command=lambda: settings.setStarType(STAR_TYPES[ORION])) \
+                command=lambda: settings.setSystemType(SYSTEM_TYPES[ORION])) \
         .grid(row=9, column=0, sticky=W, padx=5, pady=5)
-    Radiobutton(button_window, text=BLACK_HOLE, indicatoron=False, variable=star_type_radio, value=3,
+    Radiobutton(button_window, text=BLACK_HOLE, indicatoron=False, variable=system_type_radio, value=3,
                 activebackground=BLACK_HOLE_COLOR, bg=BLACK_HOLE_COLOR, selectcolor=BLACK_HOLE_COLOR,
                 fg='white', activeforeground='white',
-                command=lambda: settings.setStarType(STAR_TYPES[BLACK_HOLE])) \
+                command=lambda: settings.setSystemType(SYSTEM_TYPES[BLACK_HOLE])) \
         .grid(row=10, column=0, sticky=W, padx=5, pady=5)
+
+    Label(button_window, text='STAR COLOR', relief=GROOVE) \
+        .grid(row=6, column=1, sticky=W, padx=5, pady=5)
+    star_color_radio = IntVar()
+    star_color_radio.set(0)
+    Radiobutton(button_window, text=RANDOM_STAR, indicatoron=False, variable=star_color_radio, value=0,
+                activebackground=RANDOM_STAR_COLOR, bg=RANDOM_STAR_COLOR, selectcolor=RANDOM_STAR_COLOR,
+                command=lambda: settings.setStarColor(STAR_COLORS[RANDOM_STAR])) \
+        .grid(row=7, column=1, sticky=W, padx=5, pady=5)
+    Radiobutton(button_window, text=BLUE_STAR, indicatoron=False, variable=star_color_radio, value=1,
+                activebackground=BLUE_STAR_COLOR, bg=BLUE_STAR_COLOR, selectcolor=BLUE_STAR_COLOR,
+                fg='white', activeforeground='white',
+                command=lambda: settings.setStarColor(STAR_COLORS[BLUE_STAR])) \
+        .grid(row=8, column=1, sticky=W, padx=5, pady=5)
+    Radiobutton(button_window, text=WHITE_STAR, indicatoron=False, variable=star_color_radio, value=2,
+                activebackground=WHITE_STAR_COLOR, bg=WHITE_STAR_COLOR, selectcolor=WHITE_STAR_COLOR,
+                command=lambda: settings.setStarColor(STAR_COLORS[WHITE_STAR])) \
+        .grid(row=9, column=1, sticky=W, padx=5, pady=5)
+    Radiobutton(button_window, text=YELLOW_STAR, indicatoron=False, variable=star_color_radio, value=3,
+                activebackground=YELLOW_STAR_COLOR, bg=YELLOW_STAR_COLOR, selectcolor=YELLOW_STAR_COLOR,
+                command=lambda: settings.setStarColor(STAR_COLORS[YELLOW_STAR])) \
+        .grid(row=10, column=1, sticky=W, padx=5, pady=5)
+    Radiobutton(button_window, text=ORANGE_STAR, indicatoron=False, variable=star_color_radio, value=4,
+                activebackground=ORANGE_STAR_COLOR, bg=ORANGE_STAR_COLOR, selectcolor=ORANGE_STAR_COLOR,
+                command=lambda: settings.setStarColor(STAR_COLORS[ORANGE_STAR])) \
+        .grid(row=7, column=2, sticky=W, padx=5, pady=5)
+    Radiobutton(button_window, text=RED_STAR, indicatoron=False, variable=star_color_radio, value=5,
+                activebackground=RED_STAR_COLOR, bg=RED_STAR_COLOR, selectcolor=RED_STAR_COLOR,
+                command=lambda: settings.setStarColor(STAR_COLORS[RED_STAR])) \
+        .grid(row=8, column=2, sticky=W, padx=5, pady=5)
+    Radiobutton(button_window, text=BROWN_STAR, indicatoron=False, variable=star_color_radio, value=6,
+                activebackground=BROWN_STAR_COLOR, bg=BROWN_STAR_COLOR, selectcolor=BROWN_STAR_COLOR,
+                fg='white', activeforeground='white',
+                command=lambda: settings.setStarColor(STAR_COLORS[BROWN_STAR])) \
+        .grid(row=9, column=2, sticky=W, padx=5, pady=5)
 
     Label(button_window, text='MIRROR PLACEMENTS', relief=GROOVE) \
         .grid(row=11, column=0, sticky=W, padx=5, pady=5)
@@ -752,7 +877,7 @@ def main(argv):
     stat_labels[STARS_REMAINING] = Label(canvas_header_frame, text='??/??', font=bold_font)
     stat_labels[STARS_REMAINING].grid(row=0, column=3, sticky=W, padx=1, pady=5)
     Label(canvas_header_frame, text=NORMALS_PLACED).grid(row=0, column=4, sticky=W, padx=1, pady=5)
-    stat_labels[NORMALS_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, bg=NORMAL_STAR_COLOR)
+    stat_labels[NORMALS_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, bg=NORMAL_SYSTEM_COLOR)
     stat_labels[NORMALS_PLACED].grid(row=0, column=5, sticky=W, padx=1, pady=5)
     Label(canvas_header_frame, text=HOMEWORLDS_PLACED).grid(row=0, column=6, sticky=W, padx=1, pady=5)
     stat_labels[HOMEWORLDS_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, fg='white',
@@ -792,7 +917,7 @@ def main(argv):
             .grid(row=15 + save_slot, column=1, sticky=W, padx=5, pady=5)
 
     canvas.grid(row=1, column=0, sticky=NW)
-    canvas.bind('<Button-1>', lambda add_event: add_stars(add_event, canvas, all_stars, settings))
+    canvas.bind('<Button-1>', lambda add_event: add_system(add_event, canvas, all_stars, settings))
 
     def getPosition(event):
         x = canvas.winfo_pointerx() - canvas.winfo_rootx()
