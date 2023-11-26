@@ -9,6 +9,7 @@ Version 1.1 Changes:
   duplicates (almost) on top of each other, especially when mirroring placements
 - 'Large / Cluster' Galaxies are now separated into Large and Cluster. Cluster is the same size as large but allows for
   71 star systems instead of 54
+- Fixed current system placement type selection be overwritten when loading a galaxy.
 
 Version 1.1 Backwards Compatibility:
 - Previous Large/Cluster Galaxies were actually large galaxies, they are now converted to cluster galaxies when loaded.
