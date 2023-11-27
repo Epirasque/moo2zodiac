@@ -10,8 +10,9 @@ VERSION = "v1.1"
 # TODO: change current selected system
 # TODO: dark mode
 # TODO: system colors
-# TODO: incorporate SHOWRION; LOWER_C; (system-content-mirroring?)
 
+# TODO: incorporate SHOWRION, LOWER_C? (system-content-mirroring?)
+# TODO: nebula markers?
 # TODO: random populate button(s)?
 # TODO: zoom-buttons? (scale-factor)
 # TODO: shift everything with arrowkeys?
@@ -363,10 +364,10 @@ def add_single_system(x, y, canvas, allSystems, settings):
                       x, y - SYSTEM_DRAWING_RADIUS,
                       x + SYSTEM_DRAWING_RADIUS, y,
                       x, y + SYSTEM_DRAWING_RADIUS]
-    drawnSystem = canvas.create_polygon(polygon_points, fill=systemType.draw_color, outline=SYSTEM_OUTLINE_COLOR)
-    drawnStar = canvas.create_oval(x - STAR_COLOR_RADIUS, y - STAR_COLOR_RADIUS,
+    drawnStar = canvas.create_polygon(polygon_points, fill=starFillColor, outline=SYSTEM_OUTLINE_COLOR)
+    drawnSystem = canvas.create_oval(x - STAR_COLOR_RADIUS, y - STAR_COLOR_RADIUS,
                                    x + STAR_COLOR_RADIUS, y + STAR_COLOR_RADIUS,
-                                   fill=starFillColor, outline=SYSTEM_OUTLINE_COLOR)
+                                   fill=systemType.draw_color, outline=SYSTEM_OUTLINE_COLOR)
     # drawnSystem = canvas.create_rectangle((event.x - STAR_RECT_RADIUS, event.y - STAR_RECT_RADIUS),
     #                                     (event.x + STAR_RECT_RADIUS, event.y + STAR_RECT_RADIUS),
     #                                     fill=systemType.draw_color)
@@ -471,9 +472,9 @@ def format_system_output(all_systems):
     output = ''
     for system in all_systems:
         if system.wormhole_partner is not None:
-            output += f'{{"system_type":\"{system.systemType.name}\", "star_color":\"{system.starColor.name}\", "x":{system.x}, "y":{system.y}, "wormhole_partner_x":{system.wormhole_partner.x}, "wormhole_partner_y":{system.wormhole_partner.y}}}, '
+            output += f'{{system_type=\'{system.systemType.name}\', star_color=\'{system.starColor.name}\', x={system.x}, y={system.y}, wormhole_partner_x={system.wormhole_partner.x}, wormhole_partner_y={system.wormhole_partner.y}}}, '
         else:
-            output += f'{{"system_type":\"{system.systemType.name}\", "star_color":\"{system.starColor.name}\", "x":{system.x}, "y":{system.y}}}, '
+            output += f'{{system_type=\'{system.systemType.name}\', star_color=\'{system.starColor.name}\', x={system.x}, y={system.y}}}, '
     output = output[:-2]
     print(output)
     return output
@@ -514,11 +515,7 @@ def export_map(allSystems, titleEntry, saveSlot, galaxy, loadButton):
 
 def load_robustly_as_json(raw_string, version_float):
     print(f'Parsing {raw_string} with version {version_float}')
-    if version_float < 1.1:
-        return json.loads(raw_string.replace('\'', '\"').replace('=', '\":').replace(', ', ', \"').replace('{','{\"'))
-    else:
-        return json.loads(raw_string)
-
+    return json.loads(raw_string.replace('\'', '\"').replace('=', '\":').replace(', ', ', \"').replace('{','{\"'))
 
 def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair):
     galaxy_size_line = None
@@ -540,7 +537,7 @@ def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair):
                 title_line = line
             elif 'VERSION=' in line:
                 version_line = line
-            elif '\"system_type\":' in line or 'star_type=' in line:
+            elif 'system_type=' in line or 'star_type=' in line:
                 systems_line = line
             if galaxy_size_line is not None and title_line is not None and systems_line is not None:
                 break
