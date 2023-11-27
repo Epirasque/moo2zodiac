@@ -412,34 +412,36 @@ def add_system(event, canvas, allSystems, settings):
     x = event.x
     y = event.y
     systemsToAdd = [(x, y)]
+    width = canvas.winfo_width()
+    height = canvas.winfo_height()
     if mirror_horizontally:
-        systemsToAdd.append((canvas.winfo_width() - x, y))
+        systemsToAdd.append((width - x, y))
     if mirror_vertically:
         newSystemToAdd = []
         for systemToAdd in systemsToAdd:
-            newSystemToAdd.append((systemToAdd[0], canvas.winfo_height() - systemToAdd[1]))
+            newSystemToAdd.append((systemToAdd[0], height - systemToAdd[1]))
         systemsToAdd.extend(newSystemToAdd)
     if mirror_slash:
         newSystemToAdd = []
         for systemToAdd in systemsToAdd:
             newSystemToAdd.append(
-                get_mirror_slashed_coordinates(systemToAdd, canvas.winfo_width(), canvas.winfo_height()))
+                get_mirror_slashed_coordinates(systemToAdd, width, height))
         systemsToAdd.extend(newSystemToAdd)
     if mirror_backslash:
         newSystemToAdd = []
         for systemToAdd in systemsToAdd:
             newSystemToAdd.append(
-                get_mirror_backslashed_coordinates(systemToAdd, canvas.winfo_width(), canvas.winfo_height()))
+                get_mirror_backslashed_coordinates(systemToAdd, width, height))
         systemsToAdd.extend(newSystemToAdd)
     if mirror_center:
         newSystemToAdd = []
         for systemToAdd in systemsToAdd:
-            newSystemToAdd.append((canvas.winfo_width() - systemToAdd[0], canvas.winfo_height() - systemToAdd[1]))
+            newSystemToAdd.append((width - systemToAdd[0], height - systemToAdd[1]))
         systemsToAdd.extend(newSystemToAdd)
     validSystems = []
     for systemToAdd in systemsToAdd:
-        if systemToAdd[0] >= 0 and systemToAdd[0] <= canvas.winfo_width() \
-                and systemToAdd[1] >= 0 and systemToAdd[1] <= canvas.winfo_height():
+        if systemToAdd[0] >= 0 and systemToAdd[0] <= width \
+                and systemToAdd[1] >= 0 and systemToAdd[1] <= height:
             stillValid = True
             for system in allSystems:
                 if math.dist([system.canvas_x, system.canvas_y],
