@@ -37,7 +37,7 @@ function shuffle(table_to_shuffle)
 	end
 end
 
-function initialize_player_dependend_information(players, planets, stars)
+function initialize_player_dependent_information(players, planets, stars)
 	local home_systems = {}
 	local nr_players = 0
     for i, player in pairs(players) do
@@ -74,7 +74,7 @@ function go()
 	local players = get_players()
 	local planets = get_planets()
 	
-	local nr_players, home_systems = initialize_player_dependend_information(players, planets, stars)
+	local nr_players, home_systems = initialize_player_dependent_information(players, planets, stars)
 	
 	local game = get_game()
 	local max_x = game.map_max_x
@@ -150,6 +150,11 @@ function go()
         if next_system_id ~= -1 then
             all_placed = true
         else
+            -- placeholder: just change the color
+            all_placed = true
+--[[
+            TODO: find a way to properly generate planets based on star color; currently add_planets is based on
+                  hardcoded settings
             local stars_to_delete = {}
             local star_to_keep_by_name = {} -- IDs change when reloading stars, luckily the names are unique
             for i, star in pairs(stars) do
@@ -161,7 +166,6 @@ function go()
             end
             print('Recreating ' .. tostring(#stars_to_delete) .. ' systems because no placements use their color')
             del_stars(stars_to_delete)
-            -- TODO: RESUME HERE: new stars don't have any planets!!!
             merge_tables(stars, add_stars(#stars_to_delete))
             stars_to_delete = nil
             stars = get_stars()
@@ -173,6 +177,7 @@ function go()
             end
             star_to_keep_by_name = nil
             collectgarbage()
+]]--
         end
     end
 
