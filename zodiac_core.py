@@ -11,6 +11,7 @@ VERSION = "v1.1"
 # TODO: dark mode
 # TODO: system colors
 # TODO: snap to grid
+# TODO: config file (ui-settings, color-settings, default settings, ...)
 
 # TODO: incorporate SHOWRION, LOWER_C? (system-content-mirroring?)
 # TODO: nebula markers?
@@ -25,6 +26,9 @@ STAR_COLOR_RADIUS = 3
 MINIMAL_SYSTEM_SEPARATION_DISTANCE = 10
 WORMHOLE_SOURCE_CIRCLE_RADIUS = 10
 SCALE_FACTOR = .7
+GUI_BACKGROUND_COLOR = 'blue4'
+GUI_FOREGROUND_COLOR = 'cornflowerblue'
+GUI_FONT_ON_BACKGROUND_COLOR = 'white'
 GALAXY_COLOR = '#161616'
 CROSSHAIR_COLOR = '#303030'
 SYSTEM_OUTLINE_COLOR = '#454545'
@@ -49,11 +53,11 @@ INDICATOR_COLORS = {}
 # INDICATOR_COLORS['18'] = 'firebrick4'
 INDICATOR_NAMES = {}
 INDICATOR_NAMES['4'] = 'Standard Fuel Cells'
-INDICATOR_NAMES['6'] = 'Deuterium / Standard + Extended Tank'
-INDICATOR_NAMES['9'] = 'Iridium / Deuterium + Extended Tank'
+INDICATOR_NAMES['6'] = 'Deut. / Std.+Ext.Tank'
+INDICATOR_NAMES['9'] = 'Irid. / Deut.+Ext.Tank'
 INDICATOR_NAMES['12'] = '12 Parsecs: Uridium'
-INDICATOR_NAMES['14'] = '14 Parsecs: Iridium + Extended Tank'
-INDICATOR_NAMES['18'] = '18 Parsecs: Uridium + Extended Tank'
+INDICATOR_NAMES['14'] = '14 Parsecs: Irid.+Ext.Tank'
+INDICATOR_NAMES['18'] = '18 Parsecs: Urid.+Ext.Tank'
 
 HIGHEST_PARSEC_INDICATOR_RANGE = 18
 
@@ -675,19 +679,25 @@ def parsec2distance(parsec):
 def main(argv):
     root = Tk()
     root.title(f'Zodiac {VERSION} (by Epirasque -> https://discord.gg/45BnvY4 or romanhable@web.de)')
+    root.configure(background=GUI_BACKGROUND_COLOR)
+
     button_window = Frame(root)
+    button_window.configure(background=GUI_BACKGROUND_COLOR)
     button_window.grid(row=0, column=0, sticky='nwse')
 
     canvas_width = round(GALAXIES[GALAXY_HUGE].width * SCALE_FACTOR)
     canvas_height = round(GALAXIES[GALAXY_HUGE].height * SCALE_FACTOR)
 
     canvas_frame = Frame(root)
+    canvas_frame.configure(background=GUI_BACKGROUND_COLOR)
     canvas_frame.grid(row=0, column=1, sticky="nswe")
 
     canvas_header_frame = Frame(canvas_frame)
+    canvas_header_frame.configure(background=GUI_BACKGROUND_COLOR)
     canvas_header_frame.grid(row=0, column=0, sticky="nswe")
 
-    canvas = Canvas(canvas_frame, width=canvas_width, height=canvas_height, bg=GALAXY_COLOR)
+    # TODO: consider highlightthickness=0
+    canvas = Canvas(canvas_frame, width=canvas_width, height=canvas_height, bg=GALAXY_COLOR, highlightbackground=GUI_FOREGROUND_COLOR)
     SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A] = SystemClickmode(MODE_PLACE_WORMHOLE_A, canvas)
     SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_B] = SystemClickmode(MODE_PLACE_WORMHOLE_B, canvas)
 
@@ -721,8 +731,9 @@ def main(argv):
     canvas.coords(crosshair['backslash'], - canvas_height / 2 + canvas_width / 2, 0,
                   canvas_height / 2 + canvas_width / 2, canvas_height)
 
-    Label(button_window, text='GALAXY SIZE', relief=GROOVE) \
-        .grid(row=0, column=0, sticky=W, padx=5, pady=5)
+    # TODO: consider: , bd=0) \
+    Label(button_window, text='GALAXY SIZE', relief=GROOVE, bg=GUI_FOREGROUND_COLOR) \
+        .grid(row=0, column=0, padx=5, pady=5)
     galaxy_radio = IntVar()
     galaxy_radio.set(3)
 
@@ -741,111 +752,116 @@ def main(argv):
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_SMALL], allSystems, crosshair)) \
-        .grid(row=1, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=1, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=GALAXY_MEDIUM, indicatoron=False, variable=galaxy_radio, value=1,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_MEDIUM], allSystems, crosshair)) \
-        .grid(row=2, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=2, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=GALAXY_LARGE, indicatoron=False, variable=galaxy_radio, value=2,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_LARGE], allSystems, crosshair)) \
-        .grid(row=3, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=3, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=GALAXY_CLUSTER, indicatoron=False, variable=galaxy_radio, value=2,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_CLUSTER], allSystems, crosshair)) \
-        .grid(row=4, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=4, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=GALAXY_HUGE, indicatoron=False, variable=galaxy_radio, value=3,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_HUGE], allSystems, crosshair)) \
-        .grid(row=5, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=5, column=0, padx=5, pady=5)
 
-    Label(button_window, text='PLACEMENT TYPE', relief=GROOVE) \
-        .grid(row=6, column=0, sticky=W, padx=5, pady=5)
+    Label(button_window, text='PLACEMENT TYPE', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
+        .grid(row=6, column=0, padx=5, pady=5)
     system_type_radio = IntVar()
     system_type_radio.set(0)
     Radiobutton(button_window, text=NORMAL_SYSTEM, indicatoron=False, variable=system_type_radio, value=0,
                 activebackground=NORMAL_SYSTEM_COLOR, bg=NORMAL_SYSTEM_COLOR, selectcolor=NORMAL_SYSTEM_COLOR,
                 command=lambda: settings.setSystemType(allSystems, canvas, SYSTEM_TYPES[NORMAL_SYSTEM])) \
-        .grid(row=7, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=7, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=HOMEWORLD, indicatoron=False, variable=system_type_radio, value=1,
                 activebackground=HOMEWORLD_COLOR, bg=HOMEWORLD_COLOR, selectcolor=HOMEWORLD_COLOR,
                 command=lambda: settings.setSystemType(allSystems, canvas, SYSTEM_TYPES[HOMEWORLD])) \
-        .grid(row=8, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=8, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=ORION, indicatoron=False, variable=system_type_radio, value=2,
                 activebackground=ORION_COLOR, bg=ORION_COLOR, selectcolor=ORION_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: settings.setSystemType(allSystems, canvas, SYSTEM_TYPES[ORION])) \
-        .grid(row=9, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=9, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=BLACK_HOLE, indicatoron=False, variable=system_type_radio, value=3,
                 activebackground=BLACK_HOLE_COLOR, bg=BLACK_HOLE_COLOR, selectcolor=BLACK_HOLE_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: settings.setSystemType(allSystems, canvas, SYSTEM_TYPES[BLACK_HOLE])) \
-        .grid(row=10, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=10, column=0, padx=5, pady=5)
 
-    Label(button_window, text='STAR COLOR', relief=GROOVE) \
-        .grid(row=6, column=1, sticky=W, padx=5, pady=5)
+    Label(button_window, text='STAR COLOR', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
+        .grid(row=6, column=1, padx=5, pady=5)
+
+    star_color_frame = Frame(button_window)
+    star_color_frame.configure(background=GUI_BACKGROUND_COLOR)
+    star_color_frame.grid(row=7, column=1, rowspan=5, columnspan=1, sticky='n')
+
     starColorRadio = IntVar()
     starColorRadio.set(0)
-    Radiobutton(button_window, text=RANDOM_STAR, indicatoron=False, variable=starColorRadio, value=0,
+    Radiobutton(star_color_frame, text=RANDOM_STAR, indicatoron=False, variable=starColorRadio, value=0,
                 activebackground=RANDOM_STAR_COLOR, bg=RANDOM_STAR_COLOR, selectcolor=RANDOM_STAR_COLOR,
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[RANDOM_STAR])) \
-        .grid(row=7, column=1, sticky=W, padx=5, pady=5)
-    Radiobutton(button_window, text=BLUE_STAR, indicatoron=False, variable=starColorRadio, value=1,
+        .grid(row=0, column=0, padx=5, pady=5, sticky='E')
+    Radiobutton(star_color_frame, text=BLUE_STAR, indicatoron=False, variable=starColorRadio, value=1,
                 activebackground=BLUE_STAR_COLOR, bg=BLUE_STAR_COLOR, selectcolor=BLUE_STAR_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[BLUE_STAR])) \
-        .grid(row=8, column=1, sticky=W, padx=5, pady=5)
-    Radiobutton(button_window, text=WHITE_STAR, indicatoron=False, variable=starColorRadio, value=2,
+        .grid(row=1, column=0, padx=5, pady=5, sticky='E')
+    Radiobutton(star_color_frame, text=WHITE_STAR, indicatoron=False, variable=starColorRadio, value=2,
                 activebackground=WHITE_STAR_COLOR, bg=WHITE_STAR_COLOR, selectcolor=WHITE_STAR_COLOR,
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[WHITE_STAR])) \
-        .grid(row=9, column=1, sticky=W, padx=5, pady=5)
-    Radiobutton(button_window, text=YELLOW_STAR, indicatoron=False, variable=starColorRadio, value=3,
+        .grid(row=2, column=0, padx=5, pady=5, sticky='E')
+    Radiobutton(star_color_frame, text=YELLOW_STAR, indicatoron=False, variable=starColorRadio, value=3,
                 activebackground=YELLOW_STAR_COLOR, bg=YELLOW_STAR_COLOR, selectcolor=YELLOW_STAR_COLOR,
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[YELLOW_STAR])) \
-        .grid(row=10, column=1, sticky=W, padx=5, pady=5)
-    Radiobutton(button_window, text=ORANGE_STAR, indicatoron=False, variable=starColorRadio, value=4,
+        .grid(row=3, column=0, padx=5, pady=5, sticky='E')
+    Radiobutton(star_color_frame, text=ORANGE_STAR, indicatoron=False, variable=starColorRadio, value=4,
                 activebackground=ORANGE_STAR_COLOR, bg=ORANGE_STAR_COLOR, selectcolor=ORANGE_STAR_COLOR,
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[ORANGE_STAR])) \
-        .grid(row=7, column=2, sticky=W, padx=5, pady=5)
-    Radiobutton(button_window, text=RED_STAR, indicatoron=False, variable=starColorRadio, value=5,
+        .grid(row=1, column=1, padx=5, pady=5, sticky='W')
+    Radiobutton(star_color_frame, text=RED_STAR, indicatoron=False, variable=starColorRadio, value=5,
                 activebackground=RED_STAR_COLOR, bg=RED_STAR_COLOR, selectcolor=RED_STAR_COLOR,
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[RED_STAR])) \
-        .grid(row=8, column=2, sticky=W, padx=5, pady=5)
-    Radiobutton(button_window, text=BROWN_STAR, indicatoron=False, variable=starColorRadio, value=6,
+        .grid(row=2, column=1, padx=5, pady=5, sticky='W')
+    Radiobutton(star_color_frame, text=BROWN_STAR, indicatoron=False, variable=starColorRadio, value=6,
                 activebackground=BROWN_STAR_COLOR, bg=BROWN_STAR_COLOR, selectcolor=BROWN_STAR_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[BROWN_STAR])) \
-        .grid(row=9, column=2, sticky=W, padx=5, pady=5)
+        .grid(row=3, column=1, padx=5, pady=5, sticky='W')
 
-    Label(button_window, text='MIRROR PLACEMENTS', relief=GROOVE) \
-        .grid(row=11, column=0, sticky=W, padx=5, pady=5)
+    Label(button_window, text='MIRROR PLACEMENTS', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
+        .grid(row=11, column=1, padx=5, pady=5)
 
     Checkbutton(button_window, text='Mirror Horizontally', indicatoron=False, variable=mirror_horizontally,
                 activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
-        .grid(row=12, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=12, column=0, padx=5, pady=5)
 
     Checkbutton(button_window, text='Mirror Vertically', indicatoron=False, variable=mirror_vertically,
                 activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
-        .grid(row=13, column=0, sticky=W, padx=5, pady=5)
+        .grid(row=13, column=0, padx=5, pady=5)
 
     Checkbutton(button_window, text='Mirror /', indicatoron=False, variable=mirror_slash,
                 activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
-        .grid(row=12, column=1, sticky=W, padx=5, pady=5)
+        .grid(row=12, column=1, padx=5, pady=5)
 
     Checkbutton(button_window, text='Mirror \\', indicatoron=False, variable=mirror_backslash,
                 activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
-        .grid(row=13, column=1, sticky=W, padx=5, pady=5)
+        .grid(row=13, column=1, padx=5, pady=5)
 
     Checkbutton(button_window, text='Mirror at center point', indicatoron=False, variable=mirror_center,
                 activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
-        .grid(row=12, column=2, sticky=W, padx=5, pady=5)
+        .grid(row=12, column=2, padx=5, pady=5)
 
-    Label(button_window, text='RANGE INDICATORS', relief=GROOVE) \
-        .grid(row=14, column=2, sticky=W, padx=5, pady=5)
+    Label(button_window, text='RANGE INDICATORS', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
+        .grid(row=14, column=2, padx=5, pady=5)
     parsec_indicator_toggles['1'] = BooleanVar()  # 1 Parsec (singular) has different text
     parsecIndicators = {}
     button_color, contrasting_font_color = get_parsec_indicator_color(1)
@@ -853,7 +869,7 @@ def main(argv):
                 activebackground=button_color, bg=button_color, selectcolor=button_color,
                 fg=contrasting_font_color, activeforeground=contrasting_font_color,
                 command=lambda: change_parsec_indicator(canvas, parsecIndicators, 1, parsec_indicator_toggles)) \
-        .grid(row=15, column=2, sticky=W, padx=5, pady=5)
+        .grid(row=15, column=2, padx=5, pady=5)
     for parsec_radius in range(2, 10 + 1):
         parsec_radius_str = str(parsec_radius)
         parsec_indicator_toggles[parsec_radius_str] = BooleanVar()
@@ -868,63 +884,63 @@ def main(argv):
                     command=lambda parsec_radius=parsec_radius: change_parsec_indicator(canvas, parsecIndicators,
                                                                                         parsec_radius,
                                                                                         parsec_indicator_toggles)) \
-            .grid(row=15 - 1 + parsec_radius, column=2, sticky=W, padx=5, pady=5)
+            .grid(row=15 - 1 + parsec_radius, column=2, padx=5, pady=5)
     parsec_indicator_toggles['12'] = BooleanVar()
     button_color, contrasting_font_color = get_parsec_indicator_color(12)
     Checkbutton(button_window, text=INDICATOR_NAMES['12'], indicatoron=False, variable=parsec_indicator_toggles['12'],
                 activebackground=button_color, bg=button_color, selectcolor=button_color,
                 fg=contrasting_font_color, activeforeground=contrasting_font_color,
                 command=lambda: change_parsec_indicator(canvas, parsecIndicators, 12, parsec_indicator_toggles)) \
-        .grid(row=26, column=2, sticky=W, padx=5, pady=5)
+        .grid(row=26, column=2, padx=5, pady=5)
     parsec_indicator_toggles['14'] = BooleanVar()
     button_color, contrasting_font_color = get_parsec_indicator_color(14)
     Checkbutton(button_window, text=INDICATOR_NAMES['14'], indicatoron=False, variable=parsec_indicator_toggles['14'],
                 activebackground=button_color, bg=button_color, selectcolor=button_color,
                 fg=contrasting_font_color, activeforeground=contrasting_font_color,
                 command=lambda: change_parsec_indicator(canvas, parsecIndicators, 14, parsec_indicator_toggles)) \
-        .grid(row=27, column=2, sticky=W, padx=5, pady=5)
+        .grid(row=27, column=2, padx=5, pady=5)
     parsec_indicator_toggles['18'] = BooleanVar()
     button_color, contrasting_font_color = get_parsec_indicator_color(18)
     Checkbutton(button_window, text=INDICATOR_NAMES['18'], indicatoron=False, variable=parsec_indicator_toggles['18'],
                 activebackground=button_color, bg=button_color, selectcolor=button_color,
                 fg=contrasting_font_color, activeforeground=contrasting_font_color,
                 command=lambda: change_parsec_indicator(canvas, parsecIndicators, 18, parsec_indicator_toggles)) \
-        .grid(row=28, column=2, sticky=W, padx=5, pady=5)
+        .grid(row=28, column=2, padx=5, pady=5)
 
-    Label(canvas_header_frame, text='Galaxy Title').grid(row=0, column=0, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text='Galaxy Title', bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=0, sticky=W, padx=1, pady=5)
     title_entry = Entry(canvas_header_frame, width=20)
     title_entry.grid(row=0, column=1, sticky=W, padx=1, pady=5)
     title_entry.insert(0, 'My Zodiac Galaxy')
 
     bold_font = Font(weight="bold")
 
-    Label(canvas_header_frame, text=SYSTEMS_REMAINING).grid(row=0, column=2, sticky=W, padx=1, pady=5)
-    stat_labels[SYSTEMS_REMAINING] = Label(canvas_header_frame, text='??/??', font=bold_font)
+    Label(canvas_header_frame, text=SYSTEMS_REMAINING, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=2, sticky=W, padx=1, pady=5)
+    stat_labels[SYSTEMS_REMAINING] = Label(canvas_header_frame, text='??/??', font=bold_font, background=GUI_BACKGROUND_COLOR, foreground=GUI_FONT_ON_BACKGROUND_COLOR)
     stat_labels[SYSTEMS_REMAINING].grid(row=0, column=3, sticky=W, padx=1, pady=5)
-    Label(canvas_header_frame, text=NORMALS_PLACED).grid(row=0, column=4, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text=NORMALS_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=4, sticky=W, padx=1, pady=5)
     stat_labels[NORMALS_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, bg=NORMAL_SYSTEM_COLOR)
     stat_labels[NORMALS_PLACED].grid(row=0, column=5, sticky=W, padx=1, pady=5)
-    Label(canvas_header_frame, text=HOMEWORLDS_PLACED).grid(row=0, column=6, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text=HOMEWORLDS_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=6, sticky=W, padx=1, pady=5)
     stat_labels[HOMEWORLDS_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, fg='white',
                                            bg=HOMEWORLD_COLOR)
     stat_labels[HOMEWORLDS_PLACED].grid(row=0, column=7, sticky=W, padx=1, pady=5)
-    Label(canvas_header_frame, text=ORIONS_PLACED).grid(row=0, column=8, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text=ORIONS_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=8, sticky=W, padx=1, pady=5)
     stat_labels[ORIONS_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, fg='white', bg=ORION_COLOR)
     stat_labels[ORIONS_PLACED].grid(row=0, column=9, sticky=W, padx=1, pady=5)
-    Label(canvas_header_frame, text=BLACK_HOLES_PLACED).grid(row=0, column=10, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text=BLACK_HOLES_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=10, sticky=W, padx=1, pady=5)
     stat_labels[BLACK_HOLES_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, fg='white',
                                             bg=BLACK_HOLE_COLOR)
     stat_labels[BLACK_HOLES_PLACED].grid(row=0, column=11, sticky=W, padx=1, pady=5)
-    Label(canvas_header_frame, text=WORMHOLES_PLACED).grid(row=0, column=12, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text=WORMHOLES_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=12, sticky=W, padx=1, pady=5)
     stat_labels[WORMHOLES_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, fg='white', bg=WORMHOLE_COLOR)
     stat_labels[WORMHOLES_PLACED].grid(row=0, column=13, sticky=W, padx=1, pady=5)
 
     update_stats(allSystems, settings)
 
-    Label(button_window, text='GALAXY EXPORT', relief=GROOVE) \
-        .grid(row=14, column=0, sticky=W, padx=5, pady=5)
-    Label(button_window, text='GALAXY IMPORT', relief=GROOVE) \
-        .grid(row=14, column=1, sticky=W, padx=5, pady=5)
+    Label(button_window, text='GALAXY EXPORT', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
+        .grid(row=14, column=0, padx=5, pady=5)
+    Label(button_window, text='GALAXY IMPORT', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
+        .grid(row=14, column=1, padx=5, pady=5)
     load_radio = IntVar()
     for save_slot in range(10):
         # save_slot=save_slot prevents the value to be evaluated/overwritten later on
@@ -932,14 +948,14 @@ def main(argv):
                                   value=save_slot,
                                   command=lambda save_slot=save_slot: import_map(allSystems, title_entry, save_slot,
                                                                                  settings, canvas, crosshair))
-        load_button.grid(row=15 + save_slot, column=0, sticky=W, padx=5, pady=5)
+        load_button.grid(row=15 + save_slot, column=0, padx=5, pady=5)
         if not isfile(f'ZODIAC{save_slot}.LUA'):
             load_button.config(state=DISABLED)
 
         Button(button_window, text=f'Save ZODIAC{save_slot}',
                command=lambda save_slot=save_slot, load_button=load_button:
                export_map(allSystems, title_entry, save_slot, settings.galaxy, load_button)) \
-            .grid(row=15 + save_slot, column=1, sticky=W, padx=5, pady=5)
+            .grid(row=15 + save_slot, column=1, padx=5, pady=5)
 
     canvas.grid(row=1, column=0, sticky=NW)
     canvas.bind('<Button-1>', lambda add_event: add_system(add_event, canvas, allSystems, settings))

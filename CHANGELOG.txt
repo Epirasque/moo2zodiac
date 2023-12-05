@@ -10,6 +10,7 @@ Version 1.1 Changes:
 - 'Large / Cluster' Galaxies are now separated into Large and Cluster. Cluster is the same size as large but allows for
   71 star systems instead of 54
 - Fixed current system placement type selection be overwritten when loading a galaxy.
+- UI-Changes: Introduced Dark Mode, shortened some range indicator descriptions, adjusted layout
 
 Version 1.1 Backwards Compatibility:
 - Previous Large/Cluster Galaxies were actually large galaxies, they are now converted to cluster galaxies when loaded.
