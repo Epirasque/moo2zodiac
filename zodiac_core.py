@@ -238,8 +238,8 @@ GALAXIES = {}
 GALAXIES[GALAXY_SMALL] = Galaxy(GALAXY_SMALL, 506, 400, 20, 0)
 GALAXIES[GALAXY_MEDIUM] = Galaxy(GALAXY_MEDIUM, 759, 600, 36, 1)
 GALAXIES[GALAXY_LARGE] = Galaxy(GALAXY_LARGE, 1012, 800, 54, 2)
-GALAXIES[GALAXY_CLUSTER] = Galaxy(GALAXY_CLUSTER, 1012, 800, 71, 2)
-GALAXIES[GALAXY_HUGE] = Galaxy(GALAXY_HUGE, 1518, 1200, 71, 3)
+GALAXIES[GALAXY_CLUSTER] = Galaxy(GALAXY_CLUSTER, 1012, 800, 71, 3)
+GALAXIES[GALAXY_HUGE] = Galaxy(GALAXY_HUGE, 1518, 1200, 71, 4)
 SYSTEM_TYPES = {}
 SYSTEM_TYPES[NORMAL_SYSTEM] = SystemType(NORMAL_SYSTEM, NORMAL_SYSTEM_COLOR)
 SYSTEM_TYPES[HOMEWORLD] = SystemType(HOMEWORLD, HOMEWORLD_COLOR)
@@ -735,7 +735,7 @@ def main(argv):
     Label(button_window, text='GALAXY SIZE', relief=GROOVE, bg=GUI_FOREGROUND_COLOR) \
         .grid(row=0, column=0, padx=5, pady=5)
     galaxy_radio = IntVar()
-    galaxy_radio.set(3)
+    galaxy_radio.set(4)
 
     mirror_horizontally = BooleanVar()
     mirror_vertically = BooleanVar()
@@ -763,12 +763,12 @@ def main(argv):
                 fg='white', activeforeground='white',
                 command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_LARGE], allSystems, crosshair)) \
         .grid(row=3, column=0, padx=5, pady=5)
-    Radiobutton(button_window, text=GALAXY_CLUSTER, indicatoron=False, variable=galaxy_radio, value=2,
+    Radiobutton(button_window, text=GALAXY_CLUSTER, indicatoron=False, variable=galaxy_radio, value=3,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_CLUSTER], allSystems, crosshair)) \
         .grid(row=4, column=0, padx=5, pady=5)
-    Radiobutton(button_window, text=GALAXY_HUGE, indicatoron=False, variable=galaxy_radio, value=3,
+    Radiobutton(button_window, text=GALAXY_HUGE, indicatoron=False, variable=galaxy_radio, value=4,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_HUGE], allSystems, crosshair)) \
