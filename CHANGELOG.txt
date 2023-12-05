@@ -1,6 +1,7 @@
 Changelog for Zodiac
 
 Version 1.1 Changes:
+- Added a support-grid with customizable resolution in parsecs (decimal numbers allowed); also added snap-to-grid toggle
 - Star colors can now be customized, the color is indicated by a smaller circle in the middle of the system
 - Three more mirror-modes (slash, backslash, center) which can be combined with the previous mirror modes allowing you
   to place up to 8 systems symmetrically with a single click; systems that end up outside of the galaxy will not be
@@ -8,7 +9,7 @@ Version 1.1 Changes:
 - Added diagonal crosshair to better support mirror-modes
 - 'Large / Cluster' Galaxies are now separated into Large and Cluster. Cluster is the same size as large but allows for
   71 star systems instead of 54
-- Cosmetic changes: darker appearance, shortened some range indicator descriptions, adjusted layout
+- Cosmetic changes: various color changes, shortened some range indicator descriptions, adjusted layout
 - Established a small minimum distance to other systems when placing new ones in order to prevent accidentally placing
   duplicates (almost) on top of each other, especially when mirroring placements
 - Fixed drawing-order issue: crosshair (and grid) do not draw wormhole lines and selection markers anymore

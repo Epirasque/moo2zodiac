@@ -8,10 +8,10 @@ from tkinter.font import Font
 
 VERSION = "v1.1"
 
+# TODO: fix rounding issue(s) (multiples of grid; ingame 4 vs 5 anomaly)
+
 # TODO: change current selected system
-# TODO: dark mode
 # TODO: system colors
-# TODO: snap to grid
 # TODO: config file (ui-settings, color-settings, default settings, ...)
 
 # TODO: incorporate SHOWRION, LOWER_C? (system-content-mirroring?)
@@ -209,7 +209,7 @@ class Wormhole:
 
 class Settings:
     def __init__(self, systemType, starColor, galaxy, systemClickmode, galaxy_radio, parsec_indicator_toggles,
-                 mirror_mode, grid_resolution):
+                 mirror_mode, gridEnabled, gridResolutionInCoordinates):
         self.systemType = systemType
         self.starColor = starColor
         self.galaxy = galaxy
@@ -218,7 +218,8 @@ class Settings:
         self.blockOneClick = False
         self.parsec_indicator_toggles = parsec_indicator_toggles
         self.mirror_mode = mirror_mode
-        self.grid_resolution = grid_resolution
+        self.gridEnabled = gridEnabled
+        self.gridResolutionInCoordinates = gridResolutionInCoordinates
 
     def setSystemType(self, allSystems, canvas, systemType):
         if 'source' in self.systemClickmode.currentArguments:
@@ -454,8 +455,10 @@ def add_system(event, canvas, allSystems, settings):
     if settings.blockOneClick:
         settings.blockOneClick = False
         return
-    x = event.x
-    y = event.y
+    if settings.gridEnabled.get():
+        x, y = snap_canvas_coordinates_to_grid(event.x, event.y, settings)
+    else:
+        x, y = event.x, event.y
     systemsToAdd = [(x, y)]
     width = canvas.winfo_width()
     height = canvas.winfo_height()
@@ -573,6 +576,8 @@ def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair, 
     version_line = None
     originalSystemType = settings.systemType
     originalStarColor = settings.starColor
+    originalGridToggle = settings.gridEnabled.get()
+    settings.gridEnabled.set(False)
     filename = f'ZODIAC{save_slot}.LUA'
     if not isfile(filename):
         print(f'Cannot load {filename}, file not found')
@@ -649,6 +654,7 @@ def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair, 
     clearSelection(settings)
     settings.setSystemType(allSystems, canvas, originalSystemType)
     settings.setStarColor(allSystems, canvas, originalStarColor)
+    settings.gridEnabled.set(originalGridToggle)
 
 
 def update_stats(allSystems, settings):
@@ -675,7 +681,7 @@ def change_parsec_indicator(canvas, parsecIndicators, radius_in_parsec, parsec_i
 
 
 def parsecs_to_canvas_distance(parsecs):
-    return round(parsec2distance(parsecs) * SCALE_FACTOR)
+    return round(parsecs2distance(parsecs) * SCALE_FACTOR)
 
 
 def enable_parsec_indicator(canvas, parsecIndicators, radius_in_parsec):
@@ -694,8 +700,10 @@ def disable_parsec_indicator(canvas, parsecIndicators, radius_in_parsec):
     del parsecIndicators[radius_in_parsec]
 
 
-def parsec2distance(parsecs):
-    return parsecs * 30. - 2.
+def parsecs2distance(parsecs):
+    # true value seems to be 30 but avoid not being in range due to rounding errors;
+    # 0.6 will theoretically become noticable accross 50 horizontal parsec in huge galaxy
+    return parsecs * 29.5
 
 
 def validate_grid_resolution(string):
@@ -718,7 +726,7 @@ def check_grid_resolution_entry(P):
 
 def on_grid_resolution_changed(newValue, settings, canvas, allGridLines):
     newValueAsStr = newValue.get()
-    settings.gridResolutionInParsecs = 0. if newValueAsStr == '' else float(newValueAsStr)
+    settings.gridResolutionInCoordinates = 0. if newValueAsStr == '' else parsecs_to_canvas_distance(float(newValueAsStr))
     set_grid(settings, canvas, allGridLines)
 
 
@@ -726,21 +734,24 @@ def set_grid(settings, canvas, allGridLines):
     for gridLine in allGridLines:
         canvas.delete(gridLine)
     allGridLines.clear()
-
-    canvasStep = parsecs_to_canvas_distance(settings.gridResolutionInParsecs)
-    if canvasStep > 0.:
-        draw_grid(canvasStep, settings, canvas, allGridLines)
+    if settings.gridResolutionInCoordinates > 0.:
+        draw_grid(settings, canvas, allGridLines)
 
 
 def create_grid_line(x1, y1, x2, y2, allGridLines, canvas):
     newLine = canvas.create_line(x1, y1, x2, y2, fill=GRID_COLOR, width=1, tags=('helper_line'))
     canvas.tag_lower(newLine)
+    try:
+        canvas.tag_raise(newLine, f'parsec_indicator')
+    except:
+        pass
     allGridLines.append(newLine)
 
 
-def draw_grid(canvasStep, settings, canvas, allGridLines):
+def draw_grid(settings, canvas, allGridLines):
     canvasWidth, canvasHeight = settings.galaxy.getCanvasResolution()
     centerX, centerY = settings.galaxy.getCenterCanvasCoordinates()
+    canvasStep = settings.gridResolutionInCoordinates
 
     create_grid_line(0, centerY, canvasWidth, centerY, allGridLines, canvas)
     create_grid_line(centerX, 0, centerX, canvasHeight, allGridLines, canvas)
@@ -756,6 +767,15 @@ def draw_grid(canvasStep, settings, canvas, allGridLines):
         create_grid_line(0, nextSouth, canvasWidth, nextSouth, allGridLines, canvas)
         create_grid_line(nextWest, 0, nextWest, canvasHeight, allGridLines, canvas)
         create_grid_line(nextEast, 0, nextEast, canvasHeight, allGridLines, canvas)
+
+
+def snap_canvas_coordinates_to_grid(x, y, settings):
+    centerX, centerY = settings.galaxy.getCenterCanvasCoordinates()
+    canvasStepSize = settings.gridResolutionInCoordinates
+    snappedX = round((x - centerX) / float(canvasStepSize)) * canvasStepSize + centerX
+    snappedY = round((y - centerY) / float(canvasStepSize)) * canvasStepSize + centerY
+    print(snappedX)
+    return snappedX, snappedY
 
 
 def main(argv):
@@ -828,9 +848,11 @@ def main(argv):
     mirror_center = BooleanVar()
     mirror_mode = {'horizontal': mirror_horizontally, 'vertical': mirror_vertically,
                    'slash': mirror_slash, 'backslash': mirror_backslash, 'center': mirror_center}
+    snap_to_grid = BooleanVar()
+    snap_to_grid.set(True)
     settings = Settings(SYSTEM_TYPES[NORMAL_SYSTEM], STAR_COLORS[RANDOM_STAR], GALAXIES[GALAXY_HUGE],
                         SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A],
-                        galaxy_radio, parsec_indicator_toggles, mirror_mode, 0.0)
+                        galaxy_radio, parsec_indicator_toggles, mirror_mode, snap_to_grid, 4.0)
 
     Radiobutton(button_window, text=GALAXY_SMALL, indicatoron=False, variable=galaxy_radio, value=0,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
@@ -869,7 +891,7 @@ def main(argv):
 
     Label(button_window, text='GRID SETTINGS', relief=GROOVE, bg=GUI_FOREGROUND_COLOR) \
         .grid(row=0, column=1, padx=5, pady=5)
-    Label(grid_resolution_frame, text='Grid-Size in Parsec', bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR) \
+    Label(grid_resolution_frame, text='Grid-Size In Parsec', bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR) \
         .grid(row=0, column=0, sticky=W, padx=5, pady=5)
     grid_resolution_entry_value = StringVar()
     grid_resolution_entry_value.trace("w",
@@ -879,9 +901,14 @@ def main(argv):
     grid_resolution_entry = Entry(grid_resolution_frame, width=5, validate="key",
                                   textvariable=grid_resolution_entry_value)
     grid_resolution_entry.grid(row=0, column=1, sticky=E, padx=1, pady=5)
-    grid_resolution_entry.insert(0, '0.0')
+    grid_resolution_entry.insert(0, '4.0')
     grid_resolution_command = (grid_resolution_entry.register(check_grid_resolution_entry), '%P')
     grid_resolution_entry.config(validatecommand=grid_resolution_command)
+
+    Checkbutton(button_window, text='Snap To Grid', indicatoron=False, variable=snap_to_grid,
+                activebackground=GRID_COLOR, bg=GRID_COLOR, selectcolor=GRID_COLOR,
+                fg='white', activeforeground='white') \
+        .grid(row=2, column=1, padx=5, pady=5)
 
     Label(button_window, text='PLACEMENT TYPE', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
         .grid(row=6, column=0, padx=5, pady=5)
@@ -1084,8 +1111,10 @@ def main(argv):
     def getPosition(event):
         x = canvas.winfo_pointerx() - canvas.winfo_rootx()
         y = canvas.winfo_pointery() - canvas.winfo_rooty()
+        if snap_to_grid.get() == True and settings.gridResolutionInCoordinates > 0.:
+            x, y = snap_canvas_coordinates_to_grid(x, y, settings)
         for radius_in_parsec, indicator in parsecIndicators.items():
-            radius_in_scaled_coordinates = round(parsec2distance(radius_in_parsec) * SCALE_FACTOR)
+            radius_in_scaled_coordinates = parsecs_to_canvas_distance(radius_in_parsec)
             canvas.moveto(indicator, x - radius_in_scaled_coordinates, y - radius_in_scaled_coordinates)
 
     canvas.bind('<Motion>', getPosition)
