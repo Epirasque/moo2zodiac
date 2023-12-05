@@ -1,5 +1,6 @@
 import json
 import math
+import re
 import sys
 from os.path import isfile
 from tkinter import *
@@ -30,7 +31,8 @@ GUI_BACKGROUND_COLOR = 'blue4'
 GUI_FOREGROUND_COLOR = 'cornflowerblue'
 GUI_FONT_ON_BACKGROUND_COLOR = 'white'
 GALAXY_COLOR = '#161616'
-CROSSHAIR_COLOR = '#303030'
+CROSSHAIR_COLOR = '#505050'
+GRID_COLOR = '#404080'
 SYSTEM_OUTLINE_COLOR = '#454545'
 NORMAL_SYSTEM_COLOR = 'white'
 HOMEWORLD_COLOR = 'burlywood3'
@@ -122,6 +124,13 @@ class Galaxy:
         self.nr_systems = nr_systems
         self.radio_button_id = radio_button_id
 
+    def getCanvasResolution(self):
+        return round(self.width * SCALE_FACTOR), round(self.height * SCALE_FACTOR)
+
+    def getCenterCanvasCoordinates(self):
+        x, y = self.getCanvasResolution()
+        return x / 2, y / 2
+
 
 class System:
     def __init__(self, x, y, systemType, starColor, drawnSystem, drawnStar):
@@ -200,7 +209,7 @@ class Wormhole:
 
 class Settings:
     def __init__(self, systemType, starColor, galaxy, systemClickmode, galaxy_radio, parsec_indicator_toggles,
-                 mirror_mode):
+                 mirror_mode, grid_resolution):
         self.systemType = systemType
         self.starColor = starColor
         self.galaxy = galaxy
@@ -209,6 +218,7 @@ class Settings:
         self.blockOneClick = False
         self.parsec_indicator_toggles = parsec_indicator_toggles
         self.mirror_mode = mirror_mode
+        self.grid_resolution = grid_resolution
 
     def setSystemType(self, allSystems, canvas, systemType):
         if 'source' in self.systemClickmode.currentArguments:
@@ -318,19 +328,18 @@ def remove_system(canvas, system, allSystems, settings):
     update_stats(allSystems, settings)
 
 
-def change_galaxy_size(canvas, settings, galaxy, allSystems, crosshair):
+def change_galaxy_size(canvas, settings, galaxy, allSystems, crosshair, allGridLines):
     settings.setGalaxy(galaxy)
-    canvas_width = round(galaxy.width * SCALE_FACTOR)
-    canvas_height = round(galaxy.height * SCALE_FACTOR)
+    canvas_width, canvas_height = galaxy.getCanvasResolution()
     canvas.config(width=canvas_width, height=canvas_height)
     clear_galaxy(canvas, allSystems, settings)
     settings.setSystemClickmode(SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A])
-    canvas.coords(crosshair['vertical'], canvas_width / 2, 0, canvas_width / 2, canvas_height)
-    canvas.coords(crosshair['horizontal'], 0, canvas_height / 2, canvas_width, canvas_height / 2)
-    canvas.coords(crosshair['slash'], - canvas_height / 2 + canvas_width / 2, canvas_height,
-                  canvas_height / 2 + canvas_width / 2, 0)
-    canvas.coords(crosshair['backslash'], - canvas_height / 2 + canvas_width / 2, 0,
-                  canvas_height / 2 + canvas_width / 2, canvas_height)
+    center_x, center_y = galaxy.getCenterCanvasCoordinates()
+    canvas.coords(crosshair['vertical'], center_x, 0, center_x, canvas_height)
+    canvas.coords(crosshair['horizontal'], 0, center_y, canvas_width, center_y)
+    canvas.coords(crosshair['slash'], center_x - center_y, canvas_height, center_x + center_y, 0)
+    canvas.coords(crosshair['backslash'], center_x - center_y, 0, center_x + center_y, canvas_height)
+    set_grid(settings, canvas, allGridLines)
 
 
 def create_wormhole(source, target, canvas, allSystems, settings):
@@ -394,8 +403,8 @@ def add_single_system(x, y, canvas, allSystems, settings):
                       x, y + SYSTEM_DRAWING_RADIUS]
     drawnStar = canvas.create_polygon(polygon_points, fill=starFillColor, outline=SYSTEM_OUTLINE_COLOR)
     drawnSystem = canvas.create_oval(x - STAR_COLOR_RADIUS, y - STAR_COLOR_RADIUS,
-                                   x + STAR_COLOR_RADIUS, y + STAR_COLOR_RADIUS,
-                                   fill=systemType.draw_color, outline=SYSTEM_OUTLINE_COLOR)
+                                     x + STAR_COLOR_RADIUS, y + STAR_COLOR_RADIUS,
+                                     fill=systemType.draw_color, outline=SYSTEM_OUTLINE_COLOR)
     # drawnSystem = canvas.create_rectangle((event.x - STAR_RECT_RADIUS, event.y - STAR_RECT_RADIUS),
     #                                     (event.x + STAR_RECT_RADIUS, event.y + STAR_RECT_RADIUS),
     #                                     fill=systemType.draw_color)
@@ -546,9 +555,10 @@ def export_map(allSystems, titleEntry, saveSlot, galaxy, loadButton):
 
 def load_robustly_as_json(raw_string, version_float):
     print(f'Parsing {raw_string} with version {version_float}')
-    return json.loads(raw_string.replace('\'', '\"').replace('=', '\":').replace(', ', ', \"').replace('{','{\"'))
+    return json.loads(raw_string.replace('\'', '\"').replace('=', '\":').replace(', ', ', \"').replace('{', '{\"'))
 
-def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair):
+
+def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair, allGridLines):
     galaxy_size_line = None
     title_line = None
     systems_line = None
@@ -592,7 +602,7 @@ def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair):
     title_entry.insert(0, loaded_title_string)
     if loaded_galaxy_size_string == GALAXY_LARGE_HUGE_LEGACY:
         loaded_galaxy_size_string = GALAXY_CLUSTER
-    change_galaxy_size(canvas, settings, GALAXIES[loaded_galaxy_size_string], allSystems, crosshair)
+    change_galaxy_size(canvas, settings, GALAXIES[loaded_galaxy_size_string], allSystems, crosshair, allGridLines)
     for loaded_system_string in loaded_systems_strings:
         system_parameters = load_robustly_as_json(loaded_system_string, version_float)
         if 'system_type' in system_parameters:
@@ -656,8 +666,12 @@ def change_parsec_indicator(canvas, parsecIndicators, radius_in_parsec, parsec_i
     refresh_marker_layer_order(canvas)
 
 
+def parsecs_to_canvas_distance(parsecs):
+    return round(parsec2distance(parsecs) * SCALE_FACTOR)
+
+
 def enable_parsec_indicator(canvas, parsecIndicators, radius_in_parsec):
-    radius_in_scaled_coordinates = round(parsec2distance(radius_in_parsec) * SCALE_FACTOR)
+    radius_in_scaled_coordinates = parsecs_to_canvas_distance(radius_in_parsec)
     indicator_color, contrasting_font_color = get_parsec_indicator_color(radius_in_parsec)
     indicator = canvas.create_oval(- radius_in_scaled_coordinates, - radius_in_scaled_coordinates,
                                    radius_in_scaled_coordinates, radius_in_scaled_coordinates,
@@ -672,8 +686,62 @@ def disable_parsec_indicator(canvas, parsecIndicators, radius_in_parsec):
     del parsecIndicators[radius_in_parsec]
 
 
-def parsec2distance(parsec):
-    return parsec * 30 - 2
+def parsec2distance(parsecs):
+    return parsecs * 30. - 2.
+
+
+def validate_grid_resolution(string):
+    # taken and adjusted from https://stackoverflow.com/questions/46116037/tkinter-restrict-entry-data-to-float
+    if string == '':
+        return True
+    regex = re.compile(r"[0-9.]*$")
+    result = regex.match(string)
+    try:
+        float(result.group())
+        return True
+    except:
+        return False
+
+
+# TODO: is probably a redundant method
+def check_grid_resolution_entry(P):
+    return validate_grid_resolution(P)
+
+
+def on_grid_resolution_changed(newValue, settings, canvas, allGridLines):
+    newValueAsStr = newValue.get()
+    settings.gridResolutionInParsecs = 0. if newValueAsStr == '' else float(newValueAsStr)
+    set_grid(settings, canvas, allGridLines)
+
+
+def set_grid(settings, canvas, allGridLines):
+    for gridLine in allGridLines:
+        canvas.delete(gridLine)
+    allGridLines.clear()
+
+    canvasStep = parsecs_to_canvas_distance(settings.gridResolutionInParsecs)
+    if canvasStep > 0.:
+        draw_grid(canvasStep, settings, canvas, allGridLines)
+
+
+def draw_grid(canvasStep, settings, canvas, allGridLines):
+    canvasWidth, canvasHeight = settings.galaxy.getCanvasResolution()
+    centerX, centerY = settings.galaxy.getCenterCanvasCoordinates()
+
+    allGridLines.append(canvas.create_line(0, centerY, canvasWidth, centerY, fill=GRID_COLOR, width=1))
+    allGridLines.append(canvas.create_line(centerX, 0, centerX, canvasHeight, fill=GRID_COLOR, width=1))
+
+    nextOffset = 0
+    while nextOffset < centerX:
+        nextOffset += canvasStep
+        nextNorth = centerY - nextOffset
+        nextSouth = centerY + nextOffset
+        nextWest = centerX - nextOffset
+        nextEast = centerX + nextOffset
+        allGridLines.append(canvas.create_line(0, nextNorth, canvasWidth, nextNorth, fill=GRID_COLOR, width=1))
+        allGridLines.append(canvas.create_line(0, nextSouth, canvasWidth, nextSouth, fill=GRID_COLOR, width=1))
+        allGridLines.append(canvas.create_line(nextWest, 0, nextWest, canvasHeight, fill=GRID_COLOR, width=1))
+        allGridLines.append(canvas.create_line(nextEast, 0, nextEast, canvasHeight, fill=GRID_COLOR, width=1))
 
 
 def main(argv):
@@ -697,7 +765,8 @@ def main(argv):
     canvas_header_frame.grid(row=0, column=0, sticky="nswe")
 
     # TODO: consider highlightthickness=0
-    canvas = Canvas(canvas_frame, width=canvas_width, height=canvas_height, bg=GALAXY_COLOR, highlightbackground=GUI_FOREGROUND_COLOR)
+    canvas = Canvas(canvas_frame, width=canvas_width, height=canvas_height, bg=GALAXY_COLOR,
+                    highlightbackground=GUI_FOREGROUND_COLOR)
     SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A] = SystemClickmode(MODE_PLACE_WORMHOLE_A, canvas)
     SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_B] = SystemClickmode(MODE_PLACE_WORMHOLE_B, canvas)
 
@@ -708,6 +777,7 @@ def main(argv):
     root.resizable(True, True)
 
     allSystems = []
+    allGridLines = []
     parsec_indicator_toggles = {}
 
     crosshair_vertical = canvas.create_line(canvas_width / 2, 0, canvas_width / 2, canvas_height,
@@ -746,33 +816,58 @@ def main(argv):
                    'slash': mirror_slash, 'backslash': mirror_backslash, 'center': mirror_center}
     settings = Settings(SYSTEM_TYPES[NORMAL_SYSTEM], STAR_COLORS[RANDOM_STAR], GALAXIES[GALAXY_HUGE],
                         SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A],
-                        galaxy_radio, parsec_indicator_toggles, mirror_mode)
+                        galaxy_radio, parsec_indicator_toggles, mirror_mode, 0.0)
 
     Radiobutton(button_window, text=GALAXY_SMALL, indicatoron=False, variable=galaxy_radio, value=0,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
-                command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_SMALL], allSystems, crosshair)) \
+                command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_SMALL], allSystems, crosshair,
+                                                   allGridLines)) \
         .grid(row=1, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=GALAXY_MEDIUM, indicatoron=False, variable=galaxy_radio, value=1,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
-                command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_MEDIUM], allSystems, crosshair)) \
+                command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_MEDIUM], allSystems, crosshair,
+                                                   allGridLines)) \
         .grid(row=2, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=GALAXY_LARGE, indicatoron=False, variable=galaxy_radio, value=2,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
-                command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_LARGE], allSystems, crosshair)) \
+                command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_LARGE], allSystems, crosshair,
+                                                   allGridLines)) \
         .grid(row=3, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=GALAXY_CLUSTER, indicatoron=False, variable=galaxy_radio, value=3,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
-                command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_CLUSTER], allSystems, crosshair)) \
+                command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_CLUSTER], allSystems, crosshair,
+                                                   allGridLines)) \
         .grid(row=4, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=GALAXY_HUGE, indicatoron=False, variable=galaxy_radio, value=4,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
                 fg='white', activeforeground='white',
-                command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_HUGE], allSystems, crosshair)) \
+                command=lambda: change_galaxy_size(canvas, settings, GALAXIES[GALAXY_HUGE], allSystems, crosshair,
+                                                   allGridLines)) \
         .grid(row=5, column=0, padx=5, pady=5)
+
+    grid_resolution_frame = Frame(button_window)
+    grid_resolution_frame.configure(background=GUI_BACKGROUND_COLOR)
+    grid_resolution_frame.grid(row=1, column=1, sticky='nwse')
+
+    Label(button_window, text='GRID SETTINGS', relief=GROOVE, bg=GUI_FOREGROUND_COLOR) \
+        .grid(row=0, column=1, padx=5, pady=5)
+    Label(grid_resolution_frame, text='Grid-Size in Parsec', bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR) \
+        .grid(row=0, column=0, sticky=W, padx=5, pady=5)
+    grid_resolution_entry_value = StringVar()
+    grid_resolution_entry_value.trace("w",
+                                      lambda name, index, mode, grid_resolution_entry_value=grid_resolution_entry_value: \
+                                          on_grid_resolution_changed(grid_resolution_entry_value, settings, canvas,
+                                                                     allGridLines))
+    grid_resolution_entry = Entry(grid_resolution_frame, width=5, validate="key",
+                                  textvariable=grid_resolution_entry_value)
+    grid_resolution_entry.grid(row=0, column=1, sticky=E, padx=1, pady=5)
+    grid_resolution_entry.insert(0, '0.0')
+    grid_resolution_command = (grid_resolution_entry.register(check_grid_resolution_entry), '%P')
+    grid_resolution_entry.config(validatecommand=grid_resolution_command)
 
     Label(button_window, text='PLACEMENT TYPE', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
         .grid(row=6, column=0, padx=5, pady=5)
@@ -907,31 +1002,42 @@ def main(argv):
                 command=lambda: change_parsec_indicator(canvas, parsecIndicators, 18, parsec_indicator_toggles)) \
         .grid(row=28, column=2, padx=5, pady=5)
 
-    Label(canvas_header_frame, text='Galaxy Title', bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=0, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text='Galaxy Title', bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(
+        row=0, column=0, sticky=W, padx=1, pady=5)
     title_entry = Entry(canvas_header_frame, width=20)
     title_entry.grid(row=0, column=1, sticky=W, padx=1, pady=5)
     title_entry.insert(0, 'My Zodiac Galaxy')
 
     bold_font = Font(weight="bold")
 
-    Label(canvas_header_frame, text=SYSTEMS_REMAINING, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=2, sticky=W, padx=1, pady=5)
-    stat_labels[SYSTEMS_REMAINING] = Label(canvas_header_frame, text='??/??', font=bold_font, background=GUI_BACKGROUND_COLOR, foreground=GUI_FONT_ON_BACKGROUND_COLOR)
+    Label(canvas_header_frame, text=SYSTEMS_REMAINING, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(
+        row=0, column=2, sticky=W, padx=1, pady=5)
+    stat_labels[SYSTEMS_REMAINING] = Label(canvas_header_frame, text='??/??', font=bold_font,
+                                           background=GUI_BACKGROUND_COLOR, foreground=GUI_FONT_ON_BACKGROUND_COLOR)
     stat_labels[SYSTEMS_REMAINING].grid(row=0, column=3, sticky=W, padx=1, pady=5)
-    Label(canvas_header_frame, text=NORMALS_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=4, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text=NORMALS_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(
+        row=0, column=4, sticky=W, padx=1, pady=5)
     stat_labels[NORMALS_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, bg=NORMAL_SYSTEM_COLOR)
     stat_labels[NORMALS_PLACED].grid(row=0, column=5, sticky=W, padx=1, pady=5)
-    Label(canvas_header_frame, text=HOMEWORLDS_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=6, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text=HOMEWORLDS_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(
+        row=0, column=6, sticky=W, padx=1, pady=5)
     stat_labels[HOMEWORLDS_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, fg='white',
                                            bg=HOMEWORLD_COLOR)
     stat_labels[HOMEWORLDS_PLACED].grid(row=0, column=7, sticky=W, padx=1, pady=5)
-    Label(canvas_header_frame, text=ORIONS_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=8, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text=ORIONS_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0,
+                                                                                                                  column=8,
+                                                                                                                  sticky=W,
+                                                                                                                  padx=1,
+                                                                                                                  pady=5)
     stat_labels[ORIONS_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, fg='white', bg=ORION_COLOR)
     stat_labels[ORIONS_PLACED].grid(row=0, column=9, sticky=W, padx=1, pady=5)
-    Label(canvas_header_frame, text=BLACK_HOLES_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=10, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text=BLACK_HOLES_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(
+        row=0, column=10, sticky=W, padx=1, pady=5)
     stat_labels[BLACK_HOLES_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, fg='white',
                                             bg=BLACK_HOLE_COLOR)
     stat_labels[BLACK_HOLES_PLACED].grid(row=0, column=11, sticky=W, padx=1, pady=5)
-    Label(canvas_header_frame, text=WORMHOLES_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(row=0, column=12, sticky=W, padx=1, pady=5)
+    Label(canvas_header_frame, text=WORMHOLES_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(
+        row=0, column=12, sticky=W, padx=1, pady=5)
     stat_labels[WORMHOLES_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, fg='white', bg=WORMHOLE_COLOR)
     stat_labels[WORMHOLES_PLACED].grid(row=0, column=13, sticky=W, padx=1, pady=5)
 
@@ -947,7 +1053,8 @@ def main(argv):
         load_button = Radiobutton(button_window, text=f'Load ZODIAC{save_slot}', indicatoron=False, variable=load_radio,
                                   value=save_slot,
                                   command=lambda save_slot=save_slot: import_map(allSystems, title_entry, save_slot,
-                                                                                 settings, canvas, crosshair))
+                                                                                 settings, canvas, crosshair,
+                                                                                 allGridLines))
         load_button.grid(row=15 + save_slot, column=0, padx=5, pady=5)
         if not isfile(f'ZODIAC{save_slot}.LUA'):
             load_button.config(state=DISABLED)
