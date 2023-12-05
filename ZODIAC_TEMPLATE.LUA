@@ -127,7 +127,10 @@ function go()
                 next_system_id = get_next_valid_star_id(stars, next_system_id, home_systems)
                 if next_system_id ~= -1 then
                     local star = stars[next_system_id]
-                    if star.color == 1 then
+                    -- placeholder
+                    if true then
+                        star.color = drawn_system.color
+                    --if star.color == 1 then
                         print('placing ordinary system ' .. tostring(star) .. ' drawn as ' .. tostring(drawn_system))
                         star.x = drawn_system.x
                         star.y = drawn_system.y
@@ -150,8 +153,6 @@ function go()
         if next_system_id ~= -1 then
             all_placed = true
         else
-            -- placeholder: just change the color
-            all_placed = true
 --[[
             TODO: find a way to properly generate planets based on star color; currently add_planets is based on
                   hardcoded settings
