@@ -350,6 +350,10 @@ def create_wormhole(source, target, canvas, allSystems, settings):
         canvas.tag_raise(canvas_line, f'parsec_indicator')
     except:
         pass
+    try:
+        canvas.tag_raise(canvas_line, f'helper_line')
+    except:
+        pass
     source.dissolve_wormhole()
     target.dissolve_wormhole()
     Wormhole(source, target, canvas_line, canvas)
@@ -373,6 +377,10 @@ def leftclick_system(canvas, system, settings, allSystems):
         canvas.tag_lower(source_marker)
         try:
             canvas.tag_raise(source_marker, f'parsec_indicator')
+        except:
+            pass
+        try:
+            canvas.tag_raise(source_marker, f'helper_line')
         except:
             pass
         settings.systemClickmode.currentArguments['source'] = system
@@ -724,12 +732,18 @@ def set_grid(settings, canvas, allGridLines):
         draw_grid(canvasStep, settings, canvas, allGridLines)
 
 
+def create_grid_line(x1, y1, x2, y2, allGridLines, canvas):
+    newLine = canvas.create_line(x1, y1, x2, y2, fill=GRID_COLOR, width=1, tags=('helper_line'))
+    canvas.tag_lower(newLine)
+    allGridLines.append(newLine)
+
+
 def draw_grid(canvasStep, settings, canvas, allGridLines):
     canvasWidth, canvasHeight = settings.galaxy.getCanvasResolution()
     centerX, centerY = settings.galaxy.getCenterCanvasCoordinates()
 
-    allGridLines.append(canvas.create_line(0, centerY, canvasWidth, centerY, fill=GRID_COLOR, width=1))
-    allGridLines.append(canvas.create_line(centerX, 0, centerX, canvasHeight, fill=GRID_COLOR, width=1))
+    create_grid_line(0, centerY, canvasWidth, centerY, allGridLines, canvas)
+    create_grid_line(centerX, 0, centerX, canvasHeight, allGridLines, canvas)
 
     nextOffset = 0
     while nextOffset < centerX:
@@ -738,10 +752,10 @@ def draw_grid(canvasStep, settings, canvas, allGridLines):
         nextSouth = centerY + nextOffset
         nextWest = centerX - nextOffset
         nextEast = centerX + nextOffset
-        allGridLines.append(canvas.create_line(0, nextNorth, canvasWidth, nextNorth, fill=GRID_COLOR, width=1))
-        allGridLines.append(canvas.create_line(0, nextSouth, canvasWidth, nextSouth, fill=GRID_COLOR, width=1))
-        allGridLines.append(canvas.create_line(nextWest, 0, nextWest, canvasHeight, fill=GRID_COLOR, width=1))
-        allGridLines.append(canvas.create_line(nextEast, 0, nextEast, canvasHeight, fill=GRID_COLOR, width=1))
+        create_grid_line(0, nextNorth, canvasWidth, nextNorth, allGridLines, canvas)
+        create_grid_line(0, nextSouth, canvasWidth, nextSouth, allGridLines, canvas)
+        create_grid_line(nextWest, 0, nextWest, canvasHeight, allGridLines, canvas)
+        create_grid_line(nextEast, 0, nextEast, canvasHeight, allGridLines, canvas)
 
 
 def main(argv):
@@ -781,15 +795,15 @@ def main(argv):
     parsec_indicator_toggles = {}
 
     crosshair_vertical = canvas.create_line(canvas_width / 2, 0, canvas_width / 2, canvas_height,
-                                            fill=CROSSHAIR_COLOR, width=3)
+                                            fill=CROSSHAIR_COLOR, width=3, tags=('helper_line'))
     crosshair_horizontal = canvas.create_line(0, canvas_height / 2, canvas_width, canvas_height / 2,
-                                              fill=CROSSHAIR_COLOR, width=3)
+                                              fill=CROSSHAIR_COLOR, width=3, tags=('helper_line'))
     crosshair_slash = canvas.create_line(- canvas_height / 2 + canvas_width / 2, canvas_height,
                                          canvas_height / 2 + canvas_width / 2, 0,
-                                         fill=CROSSHAIR_COLOR, width=3)
+                                         fill=CROSSHAIR_COLOR, width=3, tags=('helper_line'))
     crosshair_backslash = canvas.create_line(- canvas_height / 2 + canvas_width / 2, 0,
                                              canvas_height / 2 + canvas_width / 2, canvas_height,
-                                             fill=CROSSHAIR_COLOR, width=3)
+                                             fill=CROSSHAIR_COLOR, width=3, tags=('helper_line'))
     crosshair = {'vertical': crosshair_vertical, 'horizontal': crosshair_horizontal,
                  'slash': crosshair_slash, 'backslash': crosshair_backslash}
     # center = canvas.create_oval((canvas_width / 2) - 3, (canvas_height / 2) - 3, (canvas_width / 2) + 3,
