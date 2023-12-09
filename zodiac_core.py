@@ -125,17 +125,17 @@ class Galaxy:
         self.radio_button_id = radio_button_id
 
     def getCanvasResolution(self):
-        return round(self.width * SCALE_FACTOR), round(self.height * SCALE_FACTOR)
+        return self.width * SCALE_FACTOR, self.height * SCALE_FACTOR
 
     def getCenterCanvasCoordinates(self):
         x, y = self.getCanvasResolution()
-        return x / 2, y / 2
+        return x / 2., y / 2.
 
 
 class System:
     def __init__(self, x, y, systemType, starColor, drawnSystem, drawnStar):
-        self.x = round(x / SCALE_FACTOR)
-        self.y = round(y / SCALE_FACTOR)
+        self.x = x / SCALE_FACTOR
+        self.y = y / SCALE_FACTOR
         self.canvas_x = x
         self.canvas_y = y
         self.systemType = systemType
@@ -400,6 +400,8 @@ def leftclick_system(canvas, system, settings, allSystems):
 
 
 def add_single_system(x, y, canvas, allSystems, settings):
+    x = float(x)
+    y = float(y)
     systemType = settings.systemType
     starColor = settings.starColor
     if systemType.name == BLACK_HOLE:
@@ -430,7 +432,7 @@ def add_single_system(x, y, canvas, allSystems, settings):
 
 def get_mirror_slashed_coordinates(systemToAdd, width, height):
     # project onto the diagonal from top left to bottom right
-    projected_x = round(height / 4. + width / 4. - systemToAdd[1] / 2. + systemToAdd[0] / 2.)
+    projected_x = height / 4. + width / 4. - systemToAdd[1] / 2. + systemToAdd[0] / 2.
 
     mirrored_x = 2 * projected_x - systemToAdd[0]
     mirrored_y = systemToAdd[1] + 2 * (projected_x - systemToAdd[0])
@@ -439,7 +441,7 @@ def get_mirror_slashed_coordinates(systemToAdd, width, height):
 
 def get_mirror_backslashed_coordinates(systemToAdd, width, height):
     # project onto the diagonal from bottom left to top right
-    projected_x = round(- height / 4. + width / 4. + systemToAdd[1] / 2. + systemToAdd[0] / 2.)
+    projected_x = - height / 4. + width / 4. + systemToAdd[1] / 2. + systemToAdd[0] / 2.
 
     mirrored_x = 2 * projected_x - systemToAdd[0]
     mirrored_y = systemToAdd[1] - 2 * (projected_x - systemToAdd[0])
@@ -456,12 +458,12 @@ def add_system(event, canvas, allSystems, settings):
         settings.blockOneClick = False
         return
     if settings.gridEnabled.get():
-        x, y = snap_canvas_coordinates_to_grid(event.x, event.y, settings)
+        x, y = snap_canvas_coordinates_to_grid(float(event.x), float(event.y), settings)
     else:
-        x, y = event.x, event.y
+        x, y = float(event.x), float(event.y)
+    print(f'adding star at {x}, {y} (with offset: {x-settings.galaxy.getCenterCanvasCoordinates()[0]}, {y-settings.galaxy.getCenterCanvasCoordinates()[1]})')
     systemsToAdd = [(x, y)]
-    width = canvas.winfo_width()
-    height = canvas.winfo_height()
+    width, height = settings.galaxy.getCanvasResolution()
     if mirror_horizontally:
         systemsToAdd.append((width - x, y))
     if mirror_vertically:
@@ -523,9 +525,9 @@ def format_system_output(all_systems):
     output = ''
     for system in all_systems:
         if system.wormhole_partner is not None:
-            output += f'{{system_type=\'{system.systemType.name}\', star_color=\'{system.starColor.name}\', x={system.x}, y={system.y}, wormhole_partner_x={system.wormhole_partner.x}, wormhole_partner_y={system.wormhole_partner.y}}}, '
+            output += f'{{system_type=\'{system.systemType.name}\', star_color=\'{system.starColor.name}\', x={round(system.x)}, y={float(system.y)}, wormhole_partner_x={float(system.wormhole_partner.x)}, wormhole_partner_y={float(system.wormhole_partner.y)}}}, '
         else:
-            output += f'{{system_type=\'{system.systemType.name}\', star_color=\'{system.starColor.name}\', x={system.x}, y={system.y}}}, '
+            output += f'{{system_type=\'{system.systemType.name}\', star_color=\'{system.starColor.name}\', x={round(system.x)}, y={round(system.y)}}}, '
     output = output[:-2]
     print(output)
     return output
@@ -623,8 +625,8 @@ def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair, 
         else:
             settings.systemType = SYSTEM_TYPES[system_parameters['star_type']]
         addSystemEvent = Event()
-        addSystemEvent.x = round(int(system_parameters['x']) * SCALE_FACTOR)
-        addSystemEvent.y = round(int(system_parameters['y']) * SCALE_FACTOR)
+        addSystemEvent.x = int(system_parameters['x']) * SCALE_FACTOR
+        addSystemEvent.y = int(system_parameters['y']) * SCALE_FACTOR
         if 'star_color' in system_parameters:
             settings.starColor = STAR_COLORS[system_parameters['star_color']]
         else:
@@ -681,7 +683,7 @@ def change_parsec_indicator(canvas, parsecIndicators, radius_in_parsec, parsec_i
 
 
 def parsecs_to_canvas_distance(parsecs):
-    return round(parsecs2distance(parsecs) * SCALE_FACTOR)
+    return parsecs2distance(parsecs) * SCALE_FACTOR
 
 
 def enable_parsec_indicator(canvas, parsecIndicators, radius_in_parsec):
@@ -772,9 +774,9 @@ def draw_grid(settings, canvas, allGridLines):
 def snap_canvas_coordinates_to_grid(x, y, settings):
     centerX, centerY = settings.galaxy.getCenterCanvasCoordinates()
     canvasStepSize = settings.gridResolutionInCoordinates
-    snappedX = round((x - centerX) / float(canvasStepSize)) * canvasStepSize + centerX
-    snappedY = round((y - centerY) / float(canvasStepSize)) * canvasStepSize + centerY
-    print(snappedX)
+    snappedX = round((x - centerX) / canvasStepSize) * canvasStepSize + centerX
+    snappedY = round((y - centerY) / canvasStepSize) * canvasStepSize + centerY
+    #print(f'stepsize {canvasStepSize}')
     return snappedX, snappedY
 
 
@@ -787,8 +789,8 @@ def main(argv):
     button_window.configure(background=GUI_BACKGROUND_COLOR)
     button_window.grid(row=0, column=0, sticky='nwse')
 
-    canvas_width = round(GALAXIES[GALAXY_HUGE].width * SCALE_FACTOR)
-    canvas_height = round(GALAXIES[GALAXY_HUGE].height * SCALE_FACTOR)
+    canvas_width = GALAXIES[GALAXY_HUGE].width * SCALE_FACTOR
+    canvas_height = GALAXIES[GALAXY_HUGE].height * SCALE_FACTOR
 
     canvas_frame = Frame(root)
     canvas_frame.configure(background=GUI_BACKGROUND_COLOR)
@@ -804,8 +806,8 @@ def main(argv):
     SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A] = SystemClickmode(MODE_PLACE_WORMHOLE_A, canvas)
     SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_B] = SystemClickmode(MODE_PLACE_WORMHOLE_B, canvas)
 
-    app_width = canvas_width + 530
-    app_height = canvas_height + 140
+    app_width = round(canvas_width + 530)
+    app_height = round(canvas_height + 140)
 
     root.geometry(f'{app_width}x{app_height}+50+10')
     root.resizable(True, True)

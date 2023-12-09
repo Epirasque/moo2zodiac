@@ -14,6 +14,7 @@ Version 1.1 Changes:
   duplicates (almost) on top of each other, especially when mirroring placements
 - Fixed drawing-order issue: crosshair (and grid) do not draw wormhole lines and selection markers anymore
 - When loading a galaxy: fixed current system placement type selection being overwritten (without selecting the button)
+- Fixed rounding issues: all objects are now treated with float precision throughout until the moment they are exported
 
 Version 1.1 Backwards Compatibility:
 - Previous Large/Cluster Galaxies were actually large galaxies, they are now converted to cluster galaxies when loaded.
