@@ -8,10 +8,8 @@ from tkinter.font import Font
 
 VERSION = "v1.1"
 
-# TODO: fix rounding issue(s) (multiples of grid; ingame 4 vs 5 anomaly)
-
-# TODO: change current selected system
-# TODO: system colors
+# TODO: incorporate mirror-mode/mod (hw-only), clear galaxy, nice-to-have: show other parts of galaxy as read-only (different bg color), ensure place-and-delete works fine
+# TODO: system colors influence planet generation changes
 # TODO: config file (ui-settings, color-settings, default settings, ...)
 
 # TODO: incorporate SHOWRION, LOWER_C? (system-content-mirroring?)
@@ -34,11 +32,11 @@ GALAXY_COLOR = '#161616'
 CROSSHAIR_COLOR = '#505050'
 GRID_COLOR = '#404080'
 SYSTEM_OUTLINE_COLOR = '#454545'
-NORMAL_SYSTEM_COLOR = 'white'
-HOMEWORLD_COLOR = 'burlywood3'
+NORMAL_SYSTEM_COLOR = 'black'
+HOMEWORLD_COLOR = 'greenyellow'
 ORION_COLOR = 'green'
 BLACK_HOLE_COLOR = 'purple'
-WORMHOLE_COLOR = 'teal'
+WORMHOLE_COLOR = 'darkslateblue'
 RANDOM_STAR_COLOR = 'grey'
 BLUE_STAR_COLOR = 'blue'
 WHITE_STAR_COLOR = 'white'
@@ -148,6 +146,8 @@ class System:
 
     def changeSystemType(self, canvas, systemType):
         self.systemType = systemType
+        if systemType.name == BLACK_HOLE:
+            self.changeStarColor(canvas, BLACK_HOLE_COLOR)
         canvas.itemconfig(self.drawnSystem, fill=systemType.draw_color)
 
     def changeStarColor(self, canvas, starColor):
@@ -178,15 +178,17 @@ class System:
 
 
 class SystemType:
-    def __init__(self, name, draw_color):
+    def __init__(self, name, draw_color, radio_button_id):
         self.name = name
         self.draw_color = draw_color
+        self.radio_button_id = radio_button_id
 
 
 class StarColor:
-    def __init__(self, name, draw_color):
+    def __init__(self, name, draw_color, radio_button_id):
         self.name = name
         self.draw_color = draw_color
+        self.radio_button_id = radio_button_id
 
 
 class Wormhole:
@@ -209,7 +211,7 @@ class Wormhole:
 
 class Settings:
     def __init__(self, systemType, starColor, galaxy, systemClickmode, galaxy_radio, parsec_indicator_toggles,
-                 mirror_mode, gridEnabled, gridResolutionInCoordinates):
+                 mirror_mode, gridEnabled, gridResolutionInCoordinates, system_type_radio, system_color_radio):
         self.systemType = systemType
         self.starColor = starColor
         self.galaxy = galaxy
@@ -220,18 +222,22 @@ class Settings:
         self.mirror_mode = mirror_mode
         self.gridEnabled = gridEnabled
         self.gridResolutionInCoordinates = gridResolutionInCoordinates
+        self.system_type_radio = system_type_radio
+        self.system_color_radio = system_color_radio
 
     def setSystemType(self, allSystems, canvas, systemType):
         if 'source' in self.systemClickmode.currentArguments:
             self.systemClickmode.currentArguments['source'].changeSystemType(canvas, systemType)
             update_stats(allSystems, self)
         self.systemType = systemType
+        self.system_type_radio.set(systemType.radio_button_id)
 
     def setStarColor(self, allSystems, canvas, starColor):
         if 'source' in self.systemClickmode.currentArguments:
             self.systemClickmode.currentArguments['source'].changeStarColor(canvas, starColor)
             update_stats(allSystems, self)
         self.starColor = starColor
+        self.system_color_radio.set(starColor.radio_button_id)
 
     def setGalaxy(self, galaxy):
         self.galaxy = galaxy
@@ -252,18 +258,18 @@ GALAXIES[GALAXY_LARGE] = Galaxy(GALAXY_LARGE, 1012, 800, 54, 2)
 GALAXIES[GALAXY_CLUSTER] = Galaxy(GALAXY_CLUSTER, 1012, 800, 71, 3)
 GALAXIES[GALAXY_HUGE] = Galaxy(GALAXY_HUGE, 1518, 1200, 71, 4)
 SYSTEM_TYPES = {}
-SYSTEM_TYPES[NORMAL_SYSTEM] = SystemType(NORMAL_SYSTEM, NORMAL_SYSTEM_COLOR)
-SYSTEM_TYPES[HOMEWORLD] = SystemType(HOMEWORLD, HOMEWORLD_COLOR)
-SYSTEM_TYPES[ORION] = SystemType(ORION, ORION_COLOR)
-SYSTEM_TYPES[BLACK_HOLE] = SystemType(BLACK_HOLE, BLACK_HOLE_COLOR)
+SYSTEM_TYPES[NORMAL_SYSTEM] = SystemType(NORMAL_SYSTEM, NORMAL_SYSTEM_COLOR, 0)
+SYSTEM_TYPES[HOMEWORLD] = SystemType(HOMEWORLD, HOMEWORLD_COLOR, 1)
+SYSTEM_TYPES[ORION] = SystemType(ORION, ORION_COLOR, 2)
+SYSTEM_TYPES[BLACK_HOLE] = SystemType(BLACK_HOLE, BLACK_HOLE_COLOR, 3)
 STAR_COLORS = {}
-STAR_COLORS[RANDOM_STAR] = StarColor(RANDOM_STAR, RANDOM_STAR_COLOR)
-STAR_COLORS[BLUE_STAR] = StarColor(BLUE_STAR, BLUE_STAR_COLOR)
-STAR_COLORS[WHITE_STAR] = StarColor(WHITE_STAR, WHITE_STAR_COLOR)
-STAR_COLORS[YELLOW_STAR] = StarColor(YELLOW_STAR, YELLOW_STAR_COLOR)
-STAR_COLORS[ORANGE_STAR] = StarColor(ORANGE_STAR, ORANGE_STAR_COLOR)
-STAR_COLORS[RED_STAR] = StarColor(RED_STAR, RED_STAR_COLOR)
-STAR_COLORS[BROWN_STAR] = StarColor(BROWN_STAR, BROWN_STAR_COLOR)
+STAR_COLORS[RANDOM_STAR] = StarColor(RANDOM_STAR, RANDOM_STAR_COLOR, 0)
+STAR_COLORS[BLUE_STAR] = StarColor(BLUE_STAR, BLUE_STAR_COLOR, 1)
+STAR_COLORS[WHITE_STAR] = StarColor(WHITE_STAR, WHITE_STAR_COLOR, 2)
+STAR_COLORS[YELLOW_STAR] = StarColor(YELLOW_STAR, YELLOW_STAR_COLOR, 3)
+STAR_COLORS[ORANGE_STAR] = StarColor(ORANGE_STAR, ORANGE_STAR_COLOR, 4)
+STAR_COLORS[RED_STAR] = StarColor(RED_STAR, RED_STAR_COLOR, 5)
+STAR_COLORS[BROWN_STAR] = StarColor(BROWN_STAR, BROWN_STAR_COLOR, 6)
 
 
 def get_parsec_indicator_color(radius_in_parsec):
@@ -387,6 +393,8 @@ def leftclick_system(canvas, system, settings, allSystems):
         settings.systemClickmode.currentArguments['source'] = system
         settings.systemClickmode.canvasMarkers.append(source_marker)
         system.wormholeMarker = source_marker
+        settings.setSystemType(allSystems, canvas, system.systemType)
+        settings.setStarColor(allSystems, canvas, system.starColor)
     elif settings.systemClickmode.mode == MODE_PLACE_WORMHOLE_B:
         source = settings.systemClickmode.currentArguments['source']
         print('Wormhole from ' + str(source) + " to " + str(system))
@@ -454,6 +462,7 @@ def add_system(event, canvas, allSystems, settings):
     mirror_slash = settings.mirror_mode['slash'].get()
     mirror_backslash = settings.mirror_mode['backslash'].get()
     mirror_center = settings.mirror_mode['center'].get()
+    mirror_at_system = settings.mirror_mode['system'].get()
     if settings.blockOneClick:
         settings.blockOneClick = False
         return
@@ -461,11 +470,18 @@ def add_system(event, canvas, allSystems, settings):
         x, y = snap_canvas_coordinates_to_grid(float(event.x), float(event.y), settings)
     else:
         x, y = float(event.x), float(event.y)
-    print(f'adding star at {x}, {y} (with offset: {x-settings.galaxy.getCenterCanvasCoordinates()[0]}, {y-settings.galaxy.getCenterCanvasCoordinates()[1]})')
+    print(
+        f'adding star at {x}, {y} (with offset: {x - settings.galaxy.getCenterCanvasCoordinates()[0]}, {y - settings.galaxy.getCenterCanvasCoordinates()[1]})')
     systemsToAdd = [(x, y)]
     width, height = settings.galaxy.getCanvasResolution()
+    if mirror_at_system and 'source' in settings.systemClickmode.currentArguments:
+        system_to_mirror_at = settings.systemClickmode.currentArguments['source']
+        systemsToAdd.append((x + 2. * (system_to_mirror_at.canvas_x - x), y + 2. * (system_to_mirror_at.canvas_y - y)))
     if mirror_horizontally:
-        systemsToAdd.append((width - x, y))
+        newSystemToAdd = []
+        for systemToAdd in systemsToAdd:
+            newSystemToAdd.append(((width - systemToAdd[0], systemToAdd[1])))
+        systemsToAdd.extend(newSystemToAdd)
     if mirror_vertically:
         newSystemToAdd = []
         for systemToAdd in systemsToAdd:
@@ -517,7 +533,6 @@ def add_system(event, canvas, allSystems, settings):
         return
     for valid_system_to_add in validSystems:
         add_single_system(valid_system_to_add[0], valid_system_to_add[1], canvas, allSystems, settings)
-    clearSelection(settings)
     update_stats(allSystems, settings)
 
 
@@ -728,7 +743,8 @@ def check_grid_resolution_entry(P):
 
 def on_grid_resolution_changed(newValue, settings, canvas, allGridLines):
     newValueAsStr = newValue.get()
-    settings.gridResolutionInCoordinates = 0. if newValueAsStr == '' else parsecs_to_canvas_distance(float(newValueAsStr))
+    settings.gridResolutionInCoordinates = 0. if newValueAsStr == '' else parsecs_to_canvas_distance(
+        float(newValueAsStr))
     set_grid(settings, canvas, allGridLines)
 
 
@@ -776,7 +792,7 @@ def snap_canvas_coordinates_to_grid(x, y, settings):
     canvasStepSize = settings.gridResolutionInCoordinates
     snappedX = round((x - centerX) / canvasStepSize) * canvasStepSize + centerX
     snappedY = round((y - centerY) / canvasStepSize) * canvasStepSize + centerY
-    #print(f'stepsize {canvasStepSize}')
+    # print(f'stepsize {canvasStepSize}')
     return snappedX, snappedY
 
 
@@ -848,13 +864,19 @@ def main(argv):
     mirror_slash = BooleanVar()
     mirror_backslash = BooleanVar()
     mirror_center = BooleanVar()
-    mirror_mode = {'horizontal': mirror_horizontally, 'vertical': mirror_vertically,
-                   'slash': mirror_slash, 'backslash': mirror_backslash, 'center': mirror_center}
+    mirror_at_system = BooleanVar()
+    mirror_mode = {'horizontal': mirror_horizontally, 'vertical': mirror_vertically, 'slash': mirror_slash,
+                   'backslash': mirror_backslash, 'center': mirror_center, 'system': mirror_at_system}
     snap_to_grid = BooleanVar()
-    snap_to_grid.set(True)
+    snap_to_grid.set(False)
+    system_type_radio = IntVar()
+    system_type_radio.set(0)
+    star_color_radio = IntVar()
+    star_color_radio.set(0)
     settings = Settings(SYSTEM_TYPES[NORMAL_SYSTEM], STAR_COLORS[RANDOM_STAR], GALAXIES[GALAXY_HUGE],
                         SYSTEM_CLICK_MODES[MODE_PLACE_WORMHOLE_A],
-                        galaxy_radio, parsec_indicator_toggles, mirror_mode, snap_to_grid, 4.0)
+                        galaxy_radio, parsec_indicator_toggles, mirror_mode, snap_to_grid, 4.0,
+                        system_type_radio, star_color_radio)
 
     Radiobutton(button_window, text=GALAXY_SMALL, indicatoron=False, variable=galaxy_radio, value=0,
                 activebackground=GALAXY_COLOR, bg=GALAXY_COLOR, selectcolor=GALAXY_COLOR,
@@ -914,16 +936,16 @@ def main(argv):
 
     Label(button_window, text='PLACEMENT TYPE', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
         .grid(row=6, column=0, padx=5, pady=5)
-    system_type_radio = IntVar()
-    system_type_radio.set(0)
-    Radiobutton(button_window, text=NORMAL_SYSTEM, indicatoron=False, variable=system_type_radio, value=0,
-                activebackground=NORMAL_SYSTEM_COLOR, bg=NORMAL_SYSTEM_COLOR, selectcolor=NORMAL_SYSTEM_COLOR,
-                command=lambda: settings.setSystemType(allSystems, canvas, SYSTEM_TYPES[NORMAL_SYSTEM])) \
-        .grid(row=7, column=0, padx=5, pady=5)
+
     Radiobutton(button_window, text=HOMEWORLD, indicatoron=False, variable=system_type_radio, value=1,
                 activebackground=HOMEWORLD_COLOR, bg=HOMEWORLD_COLOR, selectcolor=HOMEWORLD_COLOR,
                 command=lambda: settings.setSystemType(allSystems, canvas, SYSTEM_TYPES[HOMEWORLD])) \
         .grid(row=8, column=0, padx=5, pady=5)
+    Radiobutton(button_window, text=NORMAL_SYSTEM, indicatoron=False, variable=system_type_radio, value=0,
+                activebackground=NORMAL_SYSTEM_COLOR, bg=NORMAL_SYSTEM_COLOR, selectcolor=NORMAL_SYSTEM_COLOR,
+                fg='white', activeforeground='white',
+                command=lambda: settings.setSystemType(allSystems, canvas, SYSTEM_TYPES[NORMAL_SYSTEM])) \
+        .grid(row=7, column=0, padx=5, pady=5)
     Radiobutton(button_window, text=ORION, indicatoron=False, variable=system_type_radio, value=2,
                 activebackground=ORION_COLOR, bg=ORION_COLOR, selectcolor=ORION_COLOR,
                 fg='white', activeforeground='white',
@@ -935,41 +957,39 @@ def main(argv):
                 command=lambda: settings.setSystemType(allSystems, canvas, SYSTEM_TYPES[BLACK_HOLE])) \
         .grid(row=10, column=0, padx=5, pady=5)
 
-    Label(button_window, text='STAR COLOR', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
+    Label(button_window, text='STAR COLOR (PURELY COSMETIC!)', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
         .grid(row=6, column=1, padx=5, pady=5)
 
     star_color_frame = Frame(button_window)
     star_color_frame.configure(background=GUI_BACKGROUND_COLOR)
     star_color_frame.grid(row=7, column=1, rowspan=5, columnspan=1, sticky='n')
 
-    starColorRadio = IntVar()
-    starColorRadio.set(0)
-    Radiobutton(star_color_frame, text=RANDOM_STAR, indicatoron=False, variable=starColorRadio, value=0,
+    Radiobutton(star_color_frame, text=RANDOM_STAR, indicatoron=False, variable=star_color_radio, value=0,
                 activebackground=RANDOM_STAR_COLOR, bg=RANDOM_STAR_COLOR, selectcolor=RANDOM_STAR_COLOR,
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[RANDOM_STAR])) \
         .grid(row=0, column=0, padx=5, pady=5, sticky='E')
-    Radiobutton(star_color_frame, text=BLUE_STAR, indicatoron=False, variable=starColorRadio, value=1,
+    Radiobutton(star_color_frame, text=BLUE_STAR, indicatoron=False, variable=star_color_radio, value=1,
                 activebackground=BLUE_STAR_COLOR, bg=BLUE_STAR_COLOR, selectcolor=BLUE_STAR_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[BLUE_STAR])) \
         .grid(row=1, column=0, padx=5, pady=5, sticky='E')
-    Radiobutton(star_color_frame, text=WHITE_STAR, indicatoron=False, variable=starColorRadio, value=2,
+    Radiobutton(star_color_frame, text=WHITE_STAR, indicatoron=False, variable=star_color_radio, value=2,
                 activebackground=WHITE_STAR_COLOR, bg=WHITE_STAR_COLOR, selectcolor=WHITE_STAR_COLOR,
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[WHITE_STAR])) \
         .grid(row=2, column=0, padx=5, pady=5, sticky='E')
-    Radiobutton(star_color_frame, text=YELLOW_STAR, indicatoron=False, variable=starColorRadio, value=3,
+    Radiobutton(star_color_frame, text=YELLOW_STAR, indicatoron=False, variable=star_color_radio, value=3,
                 activebackground=YELLOW_STAR_COLOR, bg=YELLOW_STAR_COLOR, selectcolor=YELLOW_STAR_COLOR,
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[YELLOW_STAR])) \
         .grid(row=3, column=0, padx=5, pady=5, sticky='E')
-    Radiobutton(star_color_frame, text=ORANGE_STAR, indicatoron=False, variable=starColorRadio, value=4,
+    Radiobutton(star_color_frame, text=ORANGE_STAR, indicatoron=False, variable=star_color_radio, value=4,
                 activebackground=ORANGE_STAR_COLOR, bg=ORANGE_STAR_COLOR, selectcolor=ORANGE_STAR_COLOR,
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[ORANGE_STAR])) \
         .grid(row=1, column=1, padx=5, pady=5, sticky='W')
-    Radiobutton(star_color_frame, text=RED_STAR, indicatoron=False, variable=starColorRadio, value=5,
+    Radiobutton(star_color_frame, text=RED_STAR, indicatoron=False, variable=star_color_radio, value=5,
                 activebackground=RED_STAR_COLOR, bg=RED_STAR_COLOR, selectcolor=RED_STAR_COLOR,
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[RED_STAR])) \
         .grid(row=2, column=1, padx=5, pady=5, sticky='W')
-    Radiobutton(star_color_frame, text=BROWN_STAR, indicatoron=False, variable=starColorRadio, value=6,
+    Radiobutton(star_color_frame, text=BROWN_STAR, indicatoron=False, variable=star_color_radio, value=6,
                 activebackground=BROWN_STAR_COLOR, bg=BROWN_STAR_COLOR, selectcolor=BROWN_STAR_COLOR,
                 fg='white', activeforeground='white',
                 command=lambda: settings.setStarColor(allSystems, canvas, STAR_COLORS[BROWN_STAR])) \
@@ -997,6 +1017,10 @@ def main(argv):
     Checkbutton(button_window, text='Mirror at center point', indicatoron=False, variable=mirror_center,
                 activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
         .grid(row=12, column=2, padx=5, pady=5)
+
+    Checkbutton(button_window, text='Mirror at selected system', indicatoron=False, variable=mirror_at_system,
+                activebackground='cadetblue1', bg='cadetblue1', selectcolor='cadetblue1') \
+        .grid(row=13, column=2, padx=5, pady=5)
 
     Label(button_window, text='RANGE INDICATORS', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
         .grid(row=14, column=2, padx=5, pady=5)
@@ -1060,7 +1084,8 @@ def main(argv):
     stat_labels[SYSTEMS_REMAINING].grid(row=0, column=3, sticky=W, padx=1, pady=5)
     Label(canvas_header_frame, text=NORMALS_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(
         row=0, column=4, sticky=W, padx=1, pady=5)
-    stat_labels[NORMALS_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, bg=NORMAL_SYSTEM_COLOR)
+    stat_labels[NORMALS_PLACED] = Label(canvas_header_frame, text='?', font=bold_font, fg='white',
+                                        bg=NORMAL_SYSTEM_COLOR)
     stat_labels[NORMALS_PLACED].grid(row=0, column=5, sticky=W, padx=1, pady=5)
     Label(canvas_header_frame, text=HOMEWORLDS_PLACED, bg=GUI_BACKGROUND_COLOR, fg=GUI_FONT_ON_BACKGROUND_COLOR).grid(
         row=0, column=6, sticky=W, padx=1, pady=5)
@@ -1109,6 +1134,7 @@ def main(argv):
 
     canvas.grid(row=1, column=0, sticky=NW)
     canvas.bind('<Button-1>', lambda add_event: add_system(add_event, canvas, allSystems, settings))
+    canvas.bind('<Button-3>', lambda add_event: clearSelection(settings))
 
     def getPosition(event):
         x = canvas.winfo_pointerx() - canvas.winfo_rootx()

@@ -2,20 +2,25 @@ Changelog for Zodiac
 
 Version 1.1 Changes:
 - Added a support-grid with customizable resolution in parsecs (decimal numbers allowed); also added snap-to-grid toggle
-- Star colors can now be customized, the color is indicated by a smaller circle in the middle of the system
-- Three more mirror-modes (slash, backslash, center) which can be combined with the previous mirror modes allowing you
-  to place up to 8 systems symmetrically with a single click; systems that end up outside of the galaxy will not be
-  placed (this can happen because the galaxy has a rectangular shape but not a quadratic one)
-- Added diagonal crosshair to better support mirror-modes
+- Star colors can now be customized, the color is indicated by a smaller circle in the middle of the system. However:
+  Due to technical limitations, this is purely cosmetic, meaning the planets are randomly generated on a random star
+  color! This will likely still be improved in a later version of Zodiac, so that the new color is taken into account
+- Added four more mirror-placement-modes (slash, backslash, center, at-system) which can be combined with the previous
+  mirror-placement-modes, allowing you to place up to 16 systems symmetrically with a single click; systems that end up
+  outside of the galaxy will not be placed (this can happen because the galaxy has a rectangular shape but not a
+  quadratic one)
+- You can now edit the color and type of the currently selected system
+- Right-clicking empty space will now cancel the current selection
+- Added diagonal crosshair to better support mirror-placement-modes
 - 'Large / Cluster' Galaxies are now separated into Large and Cluster. Cluster is the same size as large but allows for
   71 star systems instead of 54
 - Cosmetic changes: various color changes, shortened some range indicator descriptions, adjusted layout
 - Established a small minimum distance to other systems when placing new ones in order to prevent accidentally placing
-  duplicates (almost) on top of each other, especially when mirroring placements
-- Fixed drawing-order issue: crosshair (and grid) do not draw wormhole lines and selection markers anymore
+  systems (almost) on top of each other, especially when mirroring placements
+- Fixed drawing-order issue: crosshair (and grid) do not draw above wormhole lines and selection markers anymore
 - When loading a galaxy: fixed current system placement type selection being overwritten (without selecting the button)
-- Fixed rounding issues: all objects are now treated with float precision throughout until the moment they are exported
+- Fixed rounding issues: all objects are now treated with float precision throughout, until the moment they are exported
 
 Version 1.1 Backwards Compatibility:
-- Previous Large/Cluster Galaxies were actually large galaxies, they are now converted to cluster galaxies when loaded.
-- Previous saved stars are treated as 'Random' color (which they were already before) when loaded.
+- Previous Large/Cluster Galaxies were actually large galaxies, they are now converted to cluster galaxies when loaded
+- Previous saved stars are treated as 'Random' color (which they were already before) when loaded
