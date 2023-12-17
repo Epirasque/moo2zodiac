@@ -540,7 +540,7 @@ def format_system_output(all_systems):
     output = ''
     for system in all_systems:
         if system.wormhole_partner is not None:
-            output += f'{{system_type=\'{system.systemType.name}\', star_color=\'{system.starColor.name}\', x={round(system.x)}, y={float(system.y)}, wormhole_partner_x={float(system.wormhole_partner.x)}, wormhole_partner_y={float(system.wormhole_partner.y)}}}, '
+            output += f'{{system_type=\'{system.systemType.name}\', star_color=\'{system.starColor.name}\', x={round(system.x)}, y={round(system.y)}, wormhole_partner_x={round(system.wormhole_partner.x)}, wormhole_partner_y={round(system.wormhole_partner.y)}}}, '
         else:
             output += f'{{system_type=\'{system.systemType.name}\', star_color=\'{system.starColor.name}\', x={round(system.x)}, y={round(system.y)}}}, '
     output = output[:-2]
