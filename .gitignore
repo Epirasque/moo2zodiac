@@ -1,8 +1,11 @@
 .idea/
 build/
 dist/
+zodiac_vX/
 *.iml
 *.exe
 *.zip
 *.spec
 *.pyc
+ZODIAC[0-9].CFG
+ZODIAC[0-9].LUA

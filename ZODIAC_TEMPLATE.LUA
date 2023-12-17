@@ -1,7 +1,7 @@
 --[[
-	Template used when creating a hand-drawn map with the provided tool. v0.4
+	Template used when creating a hand-drawn map with the provided tool.
 
-	Last update of this mod: 8th October 2023; Tested with version 1.50.22 improved
+	Last update of this mod: 17th December October 2023; Tested with version 1.50.22 improved
 
 	Questions etc. to: romanhable@web.de (Epirasque)
 ]]
@@ -24,6 +24,12 @@ BLACK_HOLE_ENCODING = 'Black Hole'
 BLACK_HOLE_COLOUR = 6
 
 
+function merge_tables(table1, table2) -- arbitrary nr. of parameters using (...) with arg apparently not supported
+    local result = {table.unpack(table1)}
+    table.move(table2, 1, #table2, #result+1, result)
+    return result
+end
+
 function shuffle(table_to_shuffle)
 	for i = #table_to_shuffle, 2, -1 do
 		local j = random(i)
@@ -31,7 +37,7 @@ function shuffle(table_to_shuffle)
 	end
 end
 
-function initialize_player_dependend_information(players, planets, stars)
+function initialize_player_dependent_information(players, planets, stars)
 	local home_systems = {}
 	local nr_players = 0
     for i, player in pairs(players) do
@@ -42,19 +48,19 @@ function initialize_player_dependend_information(players, planets, stars)
 	return nr_players, home_systems
 end
 
-function get_next_valid_star_id(stars, next_star_id, home_systems)
-	if next_star_id >= #stars then
+function get_next_valid_star_id(stars, next_system_id, home_systems)
+	if next_system_id >= #stars then
 		return -1
 	end
-	while next_star_id < #stars do
-		next_star_id = next_star_id + 1
-		local star = stars[next_star_id]
+	while next_system_id < #stars do
+		next_system_id = next_system_id + 1
+		local star = stars[next_system_id]
 		if star.keep == true then
 		else
 			break
 		end
 	end
-	return next_star_id
+	return next_system_id
 end
 
 function go()
@@ -68,7 +74,7 @@ function go()
 	local players = get_players()
 	local planets = get_planets()
 	
-	local nr_players, home_systems = initialize_player_dependend_information(players, planets, stars)
+	local nr_players, home_systems = initialize_player_dependent_information(players, planets, stars)
 	
 	local game = get_game()
 	local max_x = game.map_max_x
@@ -79,61 +85,103 @@ function go()
 	local orion = stars[0]
 	local orion_placed = false
 	
-	for d, drawn_star in ipairs(drawn_systems) do
-		if drawn_star.star_type == ORION_ENCODING and (drawn_star.placed == nil or drawn_star.placed ~= true) then
+	for d, drawn_system in ipairs(drawn_systems) do
+		if drawn_system.system_type == ORION_ENCODING and (drawn_system.placed == nil or drawn_system.placed ~= true) then
 			if orion_placed == false then
-				print('placing orion drawn as ' .. tostring(drawn_star))
+				print('placing orion drawn as ' .. tostring(drawn_system))
 				orion_placed = true
-				orion.x = drawn_star.x
-				orion.y = drawn_star.y
-				orion.wormhole_partner_x = drawn_star.wormhole_partner_x
-				orion.wormhole_partner_y = drawn_star.wormhole_partner_y
+				orion.x = drawn_system.x
+				orion.y = drawn_system.y
+				orion.wormhole_partner_x = drawn_system.wormhole_partner_x
+				orion.wormhole_partner_y = drawn_system.wormhole_partner_y
 				orion.keep = true
-				drawn_star.placed = true
+				drawn_system.placed = true
 			else
 				print('setting orion location as normal one...')
-				drawn_star.star_type = NORMAL_SYSTEM_ENCODING
+				drawn_system.system_type = NORMAL_SYSTEM_ENCODING
 			end
 		end
 	end
 
 	for p = 1, nr_players do
 		local home_system = home_systems[p]
-		for j, drawn_star in ipairs(drawn_systems) do
-			if drawn_star.star_type == HOMEWORLD_ENCODING and (drawn_star.placed == nil or drawn_star.placed ~= true) then
-				print('placing homeworld ' .. tostring(home_system) .. ' drawn as ' .. tostring(drawn_star))
-				home_system.x = drawn_star.x
-				home_system.y = drawn_star.y
-				home_system.wormhole_partner_x = drawn_star.wormhole_partner_x
-				home_system.wormhole_partner_y = drawn_star.wormhole_partner_y
+		for j, drawn_system in ipairs(drawn_systems) do
+			if drawn_system.system_type == HOMEWORLD_ENCODING and (drawn_system.placed == nil or drawn_system.placed ~= true) then
+				print('placing homeworld ' .. tostring(home_system) .. ' drawn as ' .. tostring(drawn_system))
+				home_system.x = drawn_system.x
+				home_system.y = drawn_system.y
+				home_system.wormhole_partner_x = drawn_system.wormhole_partner_x
+				home_system.wormhole_partner_y = drawn_system.wormhole_partner_y
 				home_system.keep = true
-				drawn_star.placed = true
+				drawn_system.placed = true
 				break
 			end
 		end
 	end
-	
-	local next_star_id = 0
-	for i, drawn_star in ipairs(drawn_systems) do
-		if (drawn_star.placed == nil or drawn_star.placed ~= true) then
-			next_star_id = get_next_valid_star_id(stars, next_star_id, home_systems)
-			local star = stars[next_star_id]
-			print('placing ordinary system ' .. tostring(star) .. ' drawn as ' .. tostring(drawn_star))
-			star.x = drawn_star.x
-			star.y = drawn_star.y
-			star.wormhole_partner_x = drawn_star.wormhole_partner_x
-			star.wormhole_partner_y = drawn_star.wormhole_partner_y
-			star.keep = true
-			drawn_star.placed = true
-			if drawn_star.star_type == BLACK_HOLE_ENCODING and star.color ~= BLACK_HOLE_COLOUR then
-				print('imploding it into a black hole...')
-				star.color = BLACK_HOLE_COLOUR
-				star.special = 0
-				star.wormhole = -1
-			end
-		end
-	end
-	
+
+	local all_placed = false
+	while all_placed == false do
+        local next_system_id = 0
+        for i, drawn_system in ipairs(drawn_systems) do
+            while (drawn_system.placed == nil or drawn_system.placed ~= true) and next_system_id ~= -1 do
+                next_system_id = get_next_valid_star_id(stars, next_system_id, home_systems)
+                if next_system_id ~= -1 then
+                    local star = stars[next_system_id]
+                    -- placeholder
+                    if true then
+                        star.color = drawn_system.color
+                    --if star.color == 1 then
+                        print('placing ordinary system ' .. tostring(star) .. ' drawn as ' .. tostring(drawn_system))
+                        star.x = drawn_system.x
+                        star.y = drawn_system.y
+                        star.wormhole_partner_x = drawn_system.wormhole_partner_x
+                        star.wormhole_partner_y = drawn_system.wormhole_partner_y
+                        star.keep = true
+                        drawn_system.placed = true
+                        if drawn_system.system_type == BLACK_HOLE_ENCODING and star.color ~= BLACK_HOLE_COLOUR then
+                            print('imploding it into a black hole...')
+                            star.color = BLACK_HOLE_COLOUR
+                            star.special = 0
+                            star.wormhole = -1
+                        end
+                    end
+                else
+                    -- color does not match desired one, check next valid star to see if that one does
+                end
+            end
+        end
+        if next_system_id ~= -1 then
+            all_placed = true
+        else
+--[[
+            TODO: find a way to properly generate planets based on star color; currently add_planets is based on
+                  hardcoded settings
+            local stars_to_delete = {}
+            local star_to_keep_by_name = {} -- IDs change when reloading stars, luckily the names are unique
+            for i, star in pairs(stars) do
+                if star.keep ~= nil and star.keep == true then
+                    star_to_keep_by_name[star.name] = true
+                else
+                    table.insert(stars_to_delete, i)
+                end
+            end
+            print('Recreating ' .. tostring(#stars_to_delete) .. ' systems because no placements use their color')
+            del_stars(stars_to_delete)
+            merge_tables(stars, add_stars(#stars_to_delete))
+            stars_to_delete = nil
+            stars = get_stars()
+            for i, star in pairs(stars) do
+                if star_to_keep_by_name[star.name] ~= nil then
+                    print('recognized ' .. tostring(star.name))
+                    star.keep = true
+                end
+            end
+            star_to_keep_by_name = nil
+            collectgarbage()
+]]--
+        end
+    end
+
 	print('placing wormholes...') -- don't do it earlier, coordinates will not match yet
 	for s1, star1 in pairs(stars) do
 		if star1.wormhole_partner_x ~= nil then
