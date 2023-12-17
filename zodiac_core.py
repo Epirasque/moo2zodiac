@@ -11,6 +11,7 @@ VERSION = "v1.1"
 # TODO: incorporate mirror-mode/mod (hw-only), clear galaxy, nice-to-have: show other parts of galaxy as read-only (different bg color), ensure place-and-delete works fine
 # TODO: system colors influence planet generation changes
 # TODO: config file (ui-settings, color-settings, default settings, ...)
+# TODO: warning if galaxy setting is wrong (compare with get_game)
 
 # TODO: incorporate SHOWRION, LOWER_C? (system-content-mirroring?)
 # TODO: nebula markers?

@@ -12,6 +12,7 @@ How to use it:
     - Place star systems with a left click
     - Right-click star systems to delete them
     - Left-click two different star systems to create wormholes between them
+    - Right-click empty space to deselect a star system
 5. Save the galaxy in one of the 10 slots, e.g. press 'Save ZODIAC0' to export it as a special LUA mod
 6. In the 150 launcher, enable your Zodiac galaxy via checkbox (or dropdown in case you saved multiple Zodiac galaxies)
 7. Start the game with the launcher as usual; ensure galaxy size in MOO2 is the same as was set for the Zodiac galaxy

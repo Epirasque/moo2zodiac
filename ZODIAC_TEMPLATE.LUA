@@ -1,7 +1,7 @@
 --[[
 	Template used when creating a hand-drawn map with the provided tool.
 
-	Last update of this mod: 26th November October 2023; Tested with version 1.50.22 improved
+	Last update of this mod: 17th December October 2023; Tested with version 1.50.22 improved
 
 	Questions etc. to: romanhable@web.de (Epirasque)
 ]]

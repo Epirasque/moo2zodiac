@@ -22,5 +22,8 @@ Version 1.1 Changes:
 - Fixed rounding issues: all objects are now treated with float precision throughout, until the moment they are exported
 
 Version 1.1 Backwards Compatibility:
+- From the zip, extract all files within zodiac/ and choose to overwrite all previous Zodiac 1.0 files in the
+  .../150/mods/zodiac/ folder (zodiac.exe, zodiac_core.py, both _TEMPLATE files and several .txt files)
+- To convert a galaxy from v1.0 to v1.1, load it from within Zodiac and then save it again (e.g. in the same slot)
 - Previous Large/Cluster Galaxies were actually large galaxies, they are now converted to cluster galaxies when loaded
 - Previous saved stars are treated as 'Random' color (which they were already before) when loaded
