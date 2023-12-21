@@ -27,3 +27,5 @@ Version 1.1 Backwards Compatibility:
 - To convert a galaxy from v1.0 to v1.1, load it from within Zodiac and then save it again (e.g. in the same slot)
 - Previous Large/Cluster Galaxies were actually large galaxies, they are now converted to cluster galaxies when loaded
 - Previous saved stars are treated as 'Random' color (which they were already before) when loaded
+- There is now a very small minimum distance between stars which will also take effect if you load Zodiac 1.0 maps,
+  resulting in systems (and attached wormholes) not being placed if they are (almost) on top of another system
