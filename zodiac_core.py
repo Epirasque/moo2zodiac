@@ -72,6 +72,7 @@ TEMPLATE_SAVESLOT_MARKER = '#SAVESLOT_MARKER#'
 TITLE_MARKER = '#TITLE_MARKER#'
 GALAXY_SIZE_MARKER = '#GALAXY_SIZE_MARKER#'
 VERSION_MARKER = '#VERSION_MARKER#'
+GALAXY_SIZE_ABBREVIATION_MARKER = '#GALAXY_SIZE_ABBREVIATION_MARKER#'
 
 # ENCODINGS / NAMES
 NORMAL_SYSTEM = 'Normal System'
@@ -557,6 +558,7 @@ def export_map(allSystems, titleEntry, saveSlot, galaxy, loadButton):
     nrSystems = len(allSystems)
     title = titleEntry.get()
     galaxy_size = galaxy.size_description
+    galaxy_size_abbreviation = galaxy_size[0]
     print(f'Exporting {nrSystems} systems for slot {saveSlot}...')
     saveslot_output = f'{saveSlot}'
     system_output = format_system_output(allSystems)
@@ -569,6 +571,8 @@ def export_map(allSystems, titleEntry, saveSlot, galaxy, loadButton):
                     line = line.replace(TITLE_MARKER, title)
                 if VERSION_MARKER in line:
                     line = line.replace(VERSION_MARKER, VERSION)
+                if GALAXY_SIZE_ABBREVIATION_MARKER in line:
+                    line = line.replace(GALAXY_SIZE_ABBREVIATION_MARKER, galaxy_size_abbreviation)
                 file_to_save.write(line)
     with open('ZODIAC_TEMPLATE.LUA', 'r') as template_file:
         with open(f'ZODIAC{saveSlot}.LUA', 'w') as file_to_save:
