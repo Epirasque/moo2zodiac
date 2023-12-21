@@ -1,5 +1,10 @@
 Changelog for Zodiac
 
+Version 1.1.1 Changes:
+- Fixed a rounding issue that could result in some Wormholes in 1.0 galaxies not being loaded correctly
+- Added an ingame warning popup when trying to start with the wrong galaxy size setting
+- Added a single letter after the saveslot number in the launcher to indicate the size of the galaxy (S, M, L, C or H)
+
 Version 1.1 Changes:
 - Added a support-grid with customizable resolution in parsecs (decimal numbers allowed); also added snap-to-grid toggle
 - Star colors can now be customized, the color is indicated by a smaller circle in the middle of the system. However:
@@ -27,3 +32,5 @@ Version 1.1 Backwards Compatibility:
 - To convert a galaxy from v1.0 to v1.1, load it from within Zodiac and then save it again (e.g. in the same slot)
 - Previous Large/Cluster Galaxies were actually large galaxies, they are now converted to cluster galaxies when loaded
 - Previous saved stars are treated as 'Random' color (which they were already before) when loaded
+- There is now a very small minimum distance between stars which will also take effect if you load Zodiac 1.0 galaxies,
+  resulting in systems (and attached wormholes) not being placed if they are (almost) on top of another system

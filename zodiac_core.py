@@ -6,12 +6,13 @@ from os.path import isfile
 from tkinter import *
 from tkinter.font import Font
 
-VERSION = "v1.1"
+VERSION = "v1.1.1"
 
 # TODO: incorporate mirror-mode/mod (hw-only), clear galaxy, nice-to-have: show other parts of galaxy as read-only (different bg color), ensure place-and-delete works fine
 # TODO: system colors influence planet generation changes
 # TODO: config file (ui-settings, color-settings, default settings, ...)
 # TODO: warning if galaxy setting is wrong (compare with get_game)
+# TODO: toggle(s) for crosshair
 
 # TODO: incorporate SHOWRION, LOWER_C? (system-content-mirroring?)
 # TODO: nebula markers?
@@ -20,12 +21,15 @@ VERSION = "v1.1"
 # TODO: shift everything with arrowkeys?
 # ...
 
+# LOGIC
+EPSILON = 0.00001
+MINIMAL_SYSTEM_SEPARATION_DISTANCE = 10
+SCALE_FACTOR = .7
+
 # GUI
 SYSTEM_DRAWING_RADIUS = 8
 STAR_COLOR_RADIUS = 3
-MINIMAL_SYSTEM_SEPARATION_DISTANCE = 10
 WORMHOLE_SOURCE_CIRCLE_RADIUS = 10
-SCALE_FACTOR = .7
 GUI_BACKGROUND_COLOR = 'blue4'
 GUI_FOREGROUND_COLOR = 'cornflowerblue'
 GUI_FONT_ON_BACKGROUND_COLOR = 'white'
@@ -68,6 +72,7 @@ TEMPLATE_SAVESLOT_MARKER = '#SAVESLOT_MARKER#'
 TITLE_MARKER = '#TITLE_MARKER#'
 GALAXY_SIZE_MARKER = '#GALAXY_SIZE_MARKER#'
 VERSION_MARKER = '#VERSION_MARKER#'
+GALAXY_SIZE_ABBREVIATION_MARKER = '#GALAXY_SIZE_ABBREVIATION_MARKER#'
 
 # ENCODINGS / NAMES
 NORMAL_SYSTEM = 'Normal System'
@@ -553,6 +558,7 @@ def export_map(allSystems, titleEntry, saveSlot, galaxy, loadButton):
     nrSystems = len(allSystems)
     title = titleEntry.get()
     galaxy_size = galaxy.size_description
+    galaxy_size_abbreviation = galaxy_size[0]
     print(f'Exporting {nrSystems} systems for slot {saveSlot}...')
     saveslot_output = f'{saveSlot}'
     system_output = format_system_output(allSystems)
@@ -565,6 +571,8 @@ def export_map(allSystems, titleEntry, saveSlot, galaxy, loadButton):
                     line = line.replace(TITLE_MARKER, title)
                 if VERSION_MARKER in line:
                     line = line.replace(VERSION_MARKER, VERSION)
+                if GALAXY_SIZE_ABBREVIATION_MARKER in line:
+                    line = line.replace(GALAXY_SIZE_ABBREVIATION_MARKER, galaxy_size_abbreviation)
                 file_to_save.write(line)
     with open('ZODIAC_TEMPLATE.LUA', 'r') as template_file:
         with open(f'ZODIAC{saveSlot}.LUA', 'w') as file_to_save:
@@ -641,8 +649,8 @@ def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair, 
         else:
             settings.systemType = SYSTEM_TYPES[system_parameters['star_type']]
         addSystemEvent = Event()
-        addSystemEvent.x = int(system_parameters['x']) * SCALE_FACTOR
-        addSystemEvent.y = int(system_parameters['y']) * SCALE_FACTOR
+        addSystemEvent.x = float(system_parameters['x']) * SCALE_FACTOR
+        addSystemEvent.y = float(system_parameters['y']) * SCALE_FACTOR
         if 'star_color' in system_parameters:
             settings.starColor = STAR_COLORS[system_parameters['star_color']]
         else:
@@ -655,19 +663,22 @@ def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair, 
         system_parameters = load_robustly_as_json(loaded_system_string, version_float)
         if 'wormhole_partner_x' in system_parameters and 'wormhole_partner_y' in system_parameters:
             found = False
-            source_x = int(system_parameters['x'])
-            source_y = int(system_parameters['y'])
-            target_x = int(system_parameters['wormhole_partner_x'])
-            target_y = int(system_parameters['wormhole_partner_y'])
+            source_x = float(system_parameters['x'])
+            source_y = float(system_parameters['y'])
+            target_x = float(system_parameters['wormhole_partner_x'])
+            target_y = float(system_parameters['wormhole_partner_y'])
             for source in allSystems:
-                if source.wormhole_partner is None and source.x == source_x and source.y == source_y:
+                if source.wormhole_partner is None and abs(source.x - source_x) < EPSILON and abs(source.y - source_y) < EPSILON:
                     for target in allSystems:
-                        if target.wormhole_partner is None and target.x == target_x and target.y == target_y:
+                        if target.wormhole_partner is None and abs(target.x - target_x) < EPSILON and abs(target.y - target_y) < EPSILON:
                             found = True
                             create_wormhole(source, target, canvas, allSystems, settings)
                             break
                 if found == True:
                     break
+            if found == False:
+                # valid, will occur once per wormhole because the partner coordinates are stored for both systems
+                pass
 
     clearSelection(settings)
     settings.setSystemType(allSystems, canvas, originalSystemType)

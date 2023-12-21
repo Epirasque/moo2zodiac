@@ -1,9 +1,9 @@
 --[[
 	Template used when creating a hand-drawn map with the provided tool.
 
-	Last update of this mod: 17th December October 2023; Tested with version 1.50.22 improved
+	Last update of this mod: 21th December October 2023; Tested with version 1.50.22 improved
 
-	Questions etc. to: romanhable@web.de (Epirasque)
+	Questions etc. to: https://discord.gg/45BnvY4 or romanhable@web.de (Epirasque)
 ]]
 
 TITLE='#TITLE_MARKER#'
@@ -63,6 +63,26 @@ function get_next_valid_star_id(stars, next_system_id, home_systems)
 	return next_system_id
 end
 
+local function galaxy_size_int_to_name(size, is_cluster)
+	local string size_string = "UNKNOWN"
+	if size == 0 then
+		size_string = "Small"
+	elseif size == 1 then
+		size_string = "Medium"
+	elseif size == 2 then
+		size_string = "Large"
+	elseif size == 3 then
+		if is_cluster == 1 then
+			size_string = "Cluster"
+		else
+			-- huge is originally encoded with same size as cluster
+			size = size + 1
+			size_string = "Huge"
+		end
+	end
+	return size_string .. ' Galaxy'
+end
+
 function go()
 	msgbox('Generating Zodiac Map (' .. VERSION .. ', ' .. GALAXY_SIZE .. '):\n' .. TITLE)
 	set_stars({}) -- early check that we're in universal context (inspired by hwmirror.lua)
@@ -78,12 +98,17 @@ function go()
 	
 	local game = get_game()
 	local max_x = game.map_max_x
-	local max_y = game.map_max_y	
+	local max_y = game.map_max_y
+	local ingame_galaxy_string = galaxy_size_int_to_name(game.galaxy_size, game.is_cluster)
 	local nr_stars = #stars + 1
 	
 	-- TODO: support for having no orion in the game? or just don't place a marker and it will be removed, seems fine as well
 	local orion = stars[0]
 	local orion_placed = false
+
+	if ingame_galaxy_string ~= GALAXY_SIZE then
+	    msgbox('Zodiac ERROR: given Zodiac Galaxy was created as \'' .. GALAXY_SIZE .. '\' whereas ingame settings are set to \'' .. ingame_galaxy_string .. '\'!\nThey are supposed to be identical!')
+	end
 	
 	for d, drawn_system in ipairs(drawn_systems) do
 		if drawn_system.system_type == ORION_ENCODING and (drawn_system.placed == nil or drawn_system.placed ~= true) then
