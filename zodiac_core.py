@@ -11,7 +11,6 @@ VERSION = "v1.1.2"
 # TODO: incorporate mirror-mode/mod (hw-only), clear galaxy, nice-to-have: show other parts of galaxy as read-only (different bg color), ensure place-and-delete works fine
 # TODO: system colors influence planet generation changes
 # TODO: config file (ui-settings, color-settings, default settings, ...)
-# TODO: warning if galaxy setting is wrong (compare with get_game)
 # TODO: toggle(s) for crosshair
 
 # TODO: incorporate SHOWRION, LOWER_C? (system-content-mirroring?)
@@ -596,6 +595,11 @@ def load_robustly_as_json(raw_string, version_float):
 
 
 def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair, allGridLines):
+    filename = f'ZODIAC{save_slot}.LUA'
+    if not isfile(filename):
+        print(f'Cannot load {filename}, file not found')
+        return
+
     galaxy_size_line = None
     title_line = None
     systems_line = None
@@ -604,10 +608,19 @@ def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair, 
     originalStarColor = settings.starColor
     originalGridToggle = settings.gridEnabled.get()
     settings.gridEnabled.set(False)
-    filename = f'ZODIAC{save_slot}.LUA'
-    if not isfile(filename):
-        print(f'Cannot load {filename}, file not found')
-        return
+    mirror_horizontally = settings.mirror_mode['horizontal'].get()
+    mirror_vertically = settings.mirror_mode['vertical'].get()
+    mirror_slash = settings.mirror_mode['slash'].get()
+    mirror_backslash = settings.mirror_mode['backslash'].get()
+    mirror_center = settings.mirror_mode['center'].get()
+    mirror_at_system = settings.mirror_mode['system'].get()
+    settings.mirror_mode['horizontal'].set(False)
+    settings.mirror_mode['vertical'].set(False)
+    settings.mirror_mode['slash'].set(False)
+    settings.mirror_mode['backslash'].set(False)
+    settings.mirror_mode['center'].set(False)
+    settings.mirror_mode['system'].set(False)
+
     with open(filename, 'r') as file_to_load:
         for line in file_to_load:
             # checks are not very robust against changes but that's ok, TODO: add disclaimer
@@ -642,6 +655,7 @@ def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair, 
     if loaded_galaxy_size_string == GALAXY_LARGE_HUGE_LEGACY:
         loaded_galaxy_size_string = GALAXY_CLUSTER
     change_galaxy_size(canvas, settings, GALAXIES[loaded_galaxy_size_string], allSystems, crosshair, allGridLines)
+
     for loaded_system_string in loaded_systems_strings:
         system_parameters = load_robustly_as_json(loaded_system_string, version_float)
         if 'system_type' in system_parameters:
@@ -684,6 +698,12 @@ def import_map(allSystems, title_entry, save_slot, settings, canvas, crosshair, 
     settings.setSystemType(allSystems, canvas, originalSystemType)
     settings.setStarColor(allSystems, canvas, originalStarColor)
     settings.gridEnabled.set(originalGridToggle)
+    settings.mirror_mode['horizontal'].set(mirror_horizontally)
+    settings.mirror_mode['vertical'].set(mirror_vertically)
+    settings.mirror_mode['slash'].set(mirror_slash)
+    settings.mirror_mode['backslash'].set(mirror_backslash)
+    settings.mirror_mode['center'].set(mirror_center)
+    settings.mirror_mode['system'].set(mirror_at_system)
 
 
 def update_stats(allSystems, settings):

@@ -1,5 +1,8 @@
 Changelog for Zodiac
 
+Version 1.1.2 Changes:
+- Fixed mirror-modes having an affect while loading a stored Zodiac galaxy, changing the loaded result
+
 Version 1.1.1 Changes:
 - Fixed a rounding issue that could result in some Wormholes in 1.0 galaxies not being loaded correctly
 - Added an ingame warning popup when trying to start with the wrong galaxy size setting
