@@ -6,7 +6,7 @@ from os.path import isfile
 from tkinter import *
 from tkinter.font import Font
 
-VERSION = "v1.1.1"
+VERSION = "v1.1.2"
 
 # TODO: incorporate mirror-mode/mod (hw-only), clear galaxy, nice-to-have: show other parts of galaxy as read-only (different bg color), ensure place-and-delete works fine
 # TODO: system colors influence planet generation changes
