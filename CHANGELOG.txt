@@ -1,5 +1,11 @@
 Changelog for Zodiac
 
+Version 1.1.2 Changes:
+- Fixed mirror-modes having an affect while loading a stored Zodiac galaxy, changing the loaded result
+- Fixed black holes possibly having planets which messed with AI behaviour and showed them on the planet screen;
+  'revealed' their system contents to all players to avoid AI trying to scout them, for humans it is shown as unexplored
+- Fixed corrupted state when selecting an already placed black hole
+
 Version 1.1.1 Changes:
 - Fixed a rounding issue that could result in some Wormholes in 1.0 galaxies not being loaded correctly
 - Added an ingame warning popup when trying to start with the wrong galaxy size setting

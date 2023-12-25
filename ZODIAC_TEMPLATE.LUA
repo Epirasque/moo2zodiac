@@ -1,8 +1,6 @@
 --[[
 	Template used when creating a hand-drawn map with the provided tool.
 
-	Last update of this mod: 21th December October 2023; Tested with version 1.50.22 improved
-
 	Questions etc. to: https://discord.gg/45BnvY4 or romanhable@web.de (Epirasque)
 ]]
 
@@ -106,14 +104,16 @@ function go()
 	local orion = stars[0]
 	local orion_placed = false
 
+	local planets_to_delete = {}
+
 	if ingame_galaxy_string ~= GALAXY_SIZE then
 	    msgbox('Zodiac ERROR: given Zodiac Galaxy was created as \'' .. GALAXY_SIZE .. '\' whereas ingame settings are set to \'' .. ingame_galaxy_string .. '\'!\nThey are supposed to be identical!')
 	end
-	
+
 	for d, drawn_system in ipairs(drawn_systems) do
 		if drawn_system.system_type == ORION_ENCODING and (drawn_system.placed == nil or drawn_system.placed ~= true) then
 			if orion_placed == false then
-				print('placing orion drawn as ' .. tostring(drawn_system))
+				print('placing orion...')
 				orion_placed = true
 				orion.x = drawn_system.x
 				orion.y = drawn_system.y
@@ -122,17 +122,16 @@ function go()
 				orion.keep = true
 				drawn_system.placed = true
 			else
-				print('setting orion location as normal one...')
 				drawn_system.system_type = NORMAL_SYSTEM_ENCODING
 			end
 		end
 	end
 
+	print('placing homeworlds...')
 	for p = 1, nr_players do
 		local home_system = home_systems[p]
 		for j, drawn_system in ipairs(drawn_systems) do
 			if drawn_system.system_type == HOMEWORLD_ENCODING and (drawn_system.placed == nil or drawn_system.placed ~= true) then
-				print('placing homeworld ' .. tostring(home_system) .. ' drawn as ' .. tostring(drawn_system))
 				home_system.x = drawn_system.x
 				home_system.y = drawn_system.y
 				home_system.wormhole_partner_x = drawn_system.wormhole_partner_x
@@ -143,7 +142,6 @@ function go()
 			end
 		end
 	end
-
 	local all_placed = false
 	while all_placed == false do
         local next_system_id = 0
@@ -156,7 +154,6 @@ function go()
                     if true then
                         star.color = drawn_system.color
                     --if star.color == 1 then
-                        print('placing ordinary system ' .. tostring(star) .. ' drawn as ' .. tostring(drawn_system))
                         star.x = drawn_system.x
                         star.y = drawn_system.y
                         star.wormhole_partner_x = drawn_system.wormhole_partner_x
@@ -164,10 +161,19 @@ function go()
                         star.keep = true
                         drawn_system.placed = true
                         if drawn_system.system_type == BLACK_HOLE_ENCODING and star.color ~= BLACK_HOLE_COLOUR then
-                            print('imploding it into a black hole...')
                             star.color = BLACK_HOLE_COLOUR
                             star.special = 0
+                            if star.wormhole ~= -1 then
+                                stars[star.wormhole] = -1
+                            end
                             star.wormhole = -1
+                            -- prevent AI from trying to scout black holes by revealing them (humans can't if there are no planets)
+                            star.visited = 255
+                            for i, planet in pairs(planets) do
+                                if planet.star == star.id then
+                                    table.insert(planets_to_delete, planet.id)
+                                end
+                            end
                         end
                     end
                 else
@@ -207,21 +213,24 @@ function go()
         end
     end
 
+    if #planets_to_delete > 0 then
+        print('evaporating ' .. tostring(#planets_to_delete) .. ' unused planets...')
+        del_planets(planets_to_delete)
+    end
+
 	print('placing wormholes...') -- don't do it earlier, coordinates will not match yet
 	for s1, star1 in pairs(stars) do
 		if star1.wormhole_partner_x ~= nil then
 			for s2, star2 in pairs(stars) do
 				if star1.wormhole_partner_x == star2.x and star1.wormhole_partner_y == star2.y then
-					print('found a wormhole')
 					star1.wormhole = s2
-					print(star1)
 					break
 				end
 			end
 		end
 	end
-	
-	print('cleaning up monsters at black holes...')
+
+	print('killing monsters at black holes...')
 	local ships = get_ships()
 	ships_to_delete = {}
 	for i, ship in pairs(ships) do
@@ -230,7 +239,7 @@ function go()
 		end
 	end
 	del_ships(ships_to_delete)
-	
+
 	local stars_to_delete = {}
 	for i, star in pairs(stars) do
 		if star.keep == nil or star.keep ~= true then
@@ -239,11 +248,11 @@ function go()
 			star.keep = nil
 		end
 	end
-	
-	print('updating stars...')
+
+	print('updating systems...')
 	set_stars(stars)
-	
-	print('cleaning up unused stars...')
+
+	print('annihilating ' .. tostring(#stars_to_delete) .. ' unused systems...')
 	del_stars(stars_to_delete)
 	
 	
