@@ -231,6 +231,7 @@ class Settings:
         self.system_color_radio = system_color_radio
 
     def setSystemType(self, allSystems, canvas, systemType):
+        #print(f'setting system type {systemType.name}')
         if 'source' in self.systemClickmode.currentArguments:
             self.systemClickmode.currentArguments['source'].changeSystemType(canvas, systemType)
             update_stats(allSystems, self)
@@ -238,6 +239,7 @@ class Settings:
         self.system_type_radio.set(systemType.radio_button_id)
 
     def setStarColor(self, allSystems, canvas, starColor):
+        #print(f'setting star color {starColor.name}')
         if 'source' in self.systemClickmode.currentArguments:
             self.systemClickmode.currentArguments['source'].changeStarColor(canvas, starColor)
             update_stats(allSystems, self)
@@ -245,10 +247,12 @@ class Settings:
         self.system_color_radio.set(starColor.radio_button_id)
 
     def setGalaxy(self, galaxy):
+        #print(f'setting galaxy size {galaxy.size_description}')
         self.galaxy = galaxy
         self.galaxy_radio.set(galaxy.radio_button_id)
 
     def setSystemClickmode(self, systemClickmode):
+        #print(f'setting click mode {systemClickmode.mode}')
         self.systemClickmode.reset()
         systemClickmode.reset()
         self.systemClickmode = systemClickmode
@@ -399,7 +403,8 @@ def leftclick_system(canvas, system, settings, allSystems):
         settings.systemClickmode.canvasMarkers.append(source_marker)
         system.wormholeMarker = source_marker
         settings.setSystemType(allSystems, canvas, system.systemType)
-        settings.setStarColor(allSystems, canvas, system.starColor)
+        if system.systemType != SYSTEM_TYPES[BLACK_HOLE]:
+            settings.setStarColor(allSystems, canvas, system.starColor)
     elif settings.systemClickmode.mode == MODE_PLACE_WORMHOLE_B:
         source = settings.systemClickmode.currentArguments['source']
         print('Wormhole from ' + str(source) + " to " + str(system))
