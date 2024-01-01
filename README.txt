@@ -1,6 +1,6 @@
-Zodiac Version 1.1.2
+Zodiac Version 1.2
 
-Last update of this mod: 25th December October 2023; Tested with version 1.50.22 improved
+Last update of this mod: 1st January 2024; Tested with version 1.50.23(?) improved
 
 What is it?
 A tool to manually 'draw' galaxies that can then be used in Master of Orion 2 games
