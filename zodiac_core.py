@@ -12,6 +12,8 @@ VERSION = "v1.2"
 # TODO: system colors influence planet generation changes
 # TODO: config file (ui-settings, color-settings, default settings, ...)
 # TODO: toggle(s) for crosshair
+# TODO: starting-food-planets similar to normal mapgen
+# TODO: disclaimer if no special chance is 0 or low
 
 # TODO: incorporate SHOWRION, LOWER_C? (system-content-mirroring?)
 # TODO: nebula markers?
