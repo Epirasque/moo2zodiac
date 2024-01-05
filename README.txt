@@ -28,9 +28,12 @@ Zodiac is, in general, not properly compatible with other mods that move star sy
 It should be compatible with mods that swap or modify homeworlds, such as HW_APART, HW_CLOSE or Mirror Home Systems,
 as long as these mods have a mod order greater than 150 (which is the case for the three given examples).
 Zodiac is compatible with map mods because it will not interfere with the chances of star systems having specific
-colors, planets, monsters or specials.
+colors, planets, monsters or specials. These mods should have a mod order of less than 150 in order for Zodiac to take
+the adjusted chances into account.
 An exception to this are the chances for additional black holes and wormholes, these will be set to zero.
 Also, the amount of stars allowed per galaxy is currently hard-coded.
+During galaxy preparation, Zodiac may re-roll, move and delete star systems, turn them into black holes, remove and add
+monsters, adjust specials and upgrade planets as a prize for the monsters guarding them (same as original mapgen).
 
 Using ENABLE.CFG directly:
 To enable a Zodiac galaxy directly in the ENABLE.CFG of 150 you need to provide the save slot number from 0 to 9, e.g.

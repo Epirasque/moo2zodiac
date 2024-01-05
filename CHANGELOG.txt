@@ -1,5 +1,11 @@
 Changelog for Zodiac
 
+Version 1.2 Changes:
+- Forcing a color of a star now properly affects the planets generated in that system. This is a complex process,
+  placing a lot of stars with fixed colors can increase the in-game galaxy generation time by several seconds
+- Preserved monster density: the percentage of monsters initially spawned in the game now carries over to the prepared
+  galaxy. This means the amount of monsters will feel more natural now if you have a lot of black holes and/or wormholes
+
 Version 1.1.2 Changes:
 - Fixed mirror-modes having an affect while loading a stored Zodiac galaxy, changing the loaded result
 - Fixed black holes possibly having planets which messed with AI behaviour and showed them on the planet screen;
@@ -31,6 +37,12 @@ Version 1.1 Changes:
 - Fixed drawing-order issue: crosshair (and grid) do not draw above wormhole lines and selection markers anymore
 - When loading a galaxy: fixed current system placement type selection being overwritten (without selecting the button)
 - Fixed rounding issues: all objects are now treated with float precision throughout, until the moment they are exported
+
+Version 1.2 Backwards Compatibility:
+- From the zip, extract all files within zodiac/ and choose to overwrite all previous Zodiac 1.0 files in the
+  .../150/mods/zodiac/ folder (zodiac.exe, zodiac_core.py, both _TEMPLATE files and several .txt files)
+- To convert a galaxy from v1.1 to v1.2, load it from within Zodiac and then save it again (e.g. in the same slot)
+- All features of v1.2 are directly compatible with galaxies that were created with v1.1
 
 Version 1.1 Backwards Compatibility:
 - From the zip, extract all files within zodiac/ and choose to overwrite all previous Zodiac 1.0 files in the
