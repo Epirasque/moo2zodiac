@@ -996,7 +996,7 @@ def main(argv):
                 command=lambda: settings.setSystemType(allSystems, canvas, SYSTEM_TYPES[BLACK_HOLE])) \
         .grid(row=10, column=0, padx=5, pady=5)
 
-    Label(button_window, text='STAR COLOR (PURELY COSMETIC!)', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
+    Label(button_window, text='STAR COLOR (AFFECTS PLANET GENERATION)', relief=GROOVE, background=GUI_FOREGROUND_COLOR) \
         .grid(row=6, column=1, padx=5, pady=5)
 
     star_color_frame = Frame(button_window)
