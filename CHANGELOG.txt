@@ -5,6 +5,7 @@ Version 1.2 Changes:
   placing a lot of stars with fixed colors can increase the in-game galaxy generation time by several seconds
 - Preserved monster density: the percentage of monsters initially spawned in the game now carries over to the prepared
   galaxy. This means the amount of monsters will feel more natural now if you have a lot of black holes and/or wormholes
+- Changed special characters in template-markers from # to < and > to avoid 150 launcher warnings
 
 Version 1.1.2 Changes:
 - Fixed mirror-modes having an affect while loading a stored Zodiac galaxy, changing the loaded result

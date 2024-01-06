@@ -4,14 +4,14 @@
 	Questions etc. to: https://discord.gg/45BnvY4 or romanhable@web.de (Epirasque)
 ]]
 
-TITLE='#TITLE_MARKER#'
-GALAXY_SIZE='#GALAXY_SIZE_MARKER#'
-VERSION='#VERSION_MARKER#'
+TITLE='<TITLE_MARKER>'
+GALAXY_SIZE='<GALAXY_SIZE_MARKER>'
+VERSION='<VERSION_MARKER>'
 
 set_seed()
 
 local drawn_systems = {
-	#DRAWN_SYSTEMS_MARKER#
+	<DRAWN_SYSTEMS_MARKER>
 }
 
 NORMAL_SYSTEM_ENCODING = 'Normal System'
